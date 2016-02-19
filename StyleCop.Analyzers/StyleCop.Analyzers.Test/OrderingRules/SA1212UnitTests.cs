@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.OrderingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.OrderingRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -57,6 +60,7 @@ public class Foo
         {
             return i;
         }
+
         /// <summary>
         /// The setter documentation
         /// </summary>
@@ -67,6 +71,55 @@ public class Foo
     }
 }";
 
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestPropertyWithDocumentationNoBlankLineAsync()
+        {
+            var testCode = @"
+public class Foo
+{
+    private int i = 0;
+
+    public int Prop
+    {
+        // The setter documentation
+        set
+        {
+            i = value;
+        }
+        // The getter documentation
+        get
+        {
+            return i;
+        }
+    }
+}";
+            var fixedCode = @"
+public class Foo
+{
+    private int i = 0;
+
+    public int Prop
+    {
+        // The getter documentation
+        get
+        {
+            return i;
+        }
+        // The setter documentation
+        set
+        {
+            i = value;
+        }
+    }
+}";
+
+            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(9, 9);
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
         }
@@ -111,6 +164,7 @@ public class Foo
         {
             return i;
         }
+
         // The setter documentation
         set
         {
@@ -169,6 +223,7 @@ public class Foo
         {
             return i;
         }
+
         /*
          * The setter documentation
          */

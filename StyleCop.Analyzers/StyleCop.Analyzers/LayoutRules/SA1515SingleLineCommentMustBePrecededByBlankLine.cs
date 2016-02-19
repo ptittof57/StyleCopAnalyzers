@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.LayoutRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.LayoutRules
 {
     using System;
     using System.Collections.Generic;
@@ -69,7 +72,7 @@
     /// </code>
     /// </remarks>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class SA1515SingleLineCommentMustBePrecededByBlankLine : DiagnosticAnalyzer
+    internal class SA1515SingleLineCommentMustBePrecededByBlankLine : DiagnosticAnalyzer
     {
         /// <summary>
         /// The ID for diagnostics produced by the <see cref="SA1515SingleLineCommentMustBePrecededByBlankLine"/>
@@ -84,30 +87,25 @@
         private static readonly DiagnosticDescriptor Descriptor =
             new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, AnalyzerCategory.LayoutRules, DiagnosticSeverity.Warning, AnalyzerConstants.EnabledByDefault, Description, HelpLink);
 
-        private static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsValue =
-            ImmutableArray.Create(Descriptor);
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
+        private static readonly Action<SyntaxTreeAnalysisContext> SyntaxTreeAction = HandleSyntaxTree;
 
         /// <inheritdoc/>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        {
-            get
-            {
-                return SupportedDiagnosticsValue;
-            }
-        }
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
+            ImmutableArray.Create(Descriptor);
 
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterCompilationStartAction(HandleCompilationStart);
+            context.RegisterCompilationStartAction(CompilationStartAction);
         }
 
         private static void HandleCompilationStart(CompilationStartAnalysisContext context)
         {
-            context.RegisterSyntaxTreeActionHonorExclusions(HandleSyntaxTreeAnalysis);
+            context.RegisterSyntaxTreeActionHonorExclusions(SyntaxTreeAction);
         }
 
-        private static void HandleSyntaxTreeAnalysis(SyntaxTreeAnalysisContext context)
+        private static void HandleSyntaxTree(SyntaxTreeAnalysisContext context)
         {
             var syntaxRoot = context.Tree.GetRoot(context.CancellationToken);
 
@@ -126,6 +124,8 @@
                 }
 
                 int triviaIndex;
+
+                // PERF: Explicitly cast to IReadOnlyList so we only box once.
                 var triviaList = TriviaHelper.GetContainingTriviaList(trivia, out triviaIndex);
 
                 if (!IsOnOwnLine(triviaList, triviaIndex))
@@ -163,7 +163,8 @@
             }
         }
 
-        private static bool IsOnOwnLine(IReadOnlyList<SyntaxTrivia> triviaList, int triviaIndex)
+        private static bool IsOnOwnLine<T>(T triviaList, int triviaIndex)
+            where T : IReadOnlyList<SyntaxTrivia>
         {
             while (triviaIndex >= 0)
             {
@@ -178,7 +179,8 @@
             return false;
         }
 
-        private static bool IsPrecededBySingleLineCommentOrDocumentation(IReadOnlyList<SyntaxTrivia> triviaList, int triviaIndex)
+        private static bool IsPrecededBySingleLineCommentOrDocumentation<T>(T triviaList, int triviaIndex)
+            where T : IReadOnlyList<SyntaxTrivia>
         {
             var eolCount = 0;
 
@@ -208,7 +210,8 @@
             return false;
         }
 
-        private static bool IsPrecededByBlankLine(IReadOnlyList<SyntaxTrivia> triviaList, int triviaIndex)
+        private static bool IsPrecededByBlankLine<T>(T triviaList, int triviaIndex)
+            where T : IReadOnlyList<SyntaxTrivia>
         {
             var eolCount = 0;
             var index = triviaIndex - 1;
@@ -255,7 +258,8 @@
                    || prevToken.Parent.IsKind(SyntaxKind.DefaultSwitchLabel);
         }
 
-        private static bool IsPrecededByDirectiveTrivia(IReadOnlyList<SyntaxTrivia> triviaList, int triviaIndex)
+        private static bool IsPrecededByDirectiveTrivia<T>(T triviaList, int triviaIndex)
+            where T : IReadOnlyList<SyntaxTrivia>
         {
             triviaIndex--;
             while (triviaIndex >= 0)

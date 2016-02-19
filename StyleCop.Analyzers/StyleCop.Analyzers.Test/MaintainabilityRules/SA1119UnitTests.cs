@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.MaintainabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.MaintainabilityRules
 {
     using System.Collections.Generic;
     using System.Collections.Immutable;
@@ -1166,7 +1169,7 @@ public class Foo
         public async Task TestElementAccessExpressionAroundConditionalMemberAccessExpressionAsync()
         {
             // In this case removing the parenthesis is an syntactical(because char is a value type) change to the code.
-            // If (myObject?.Foo)[0] would be a refrrence type removing parenthesis would be a semantic change
+            // If (myObject?.Foo)[0] would be a reference type removing parenthesis would be a semantic change
             // because (myObject?.Foo)[0] crashes if myObject is null, but myObject?.Foo[0] evaluates to null.
             string testCode = @"class Foo
 {

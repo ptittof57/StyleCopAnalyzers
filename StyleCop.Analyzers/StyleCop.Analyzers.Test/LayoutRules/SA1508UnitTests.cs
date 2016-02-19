@@ -1,8 +1,12 @@
-﻿namespace StyleCop.Analyzers.Test.LayoutRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.LayoutRules
 {
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CodeFixes;
     using Microsoft.CodeAnalysis.Diagnostics;
     using StyleCop.Analyzers.LayoutRules;
@@ -10,7 +14,7 @@
     using Xunit;
 
     /// <summary>
-    /// Unit tests for the <see cref="SA1508ClosingCurlyBracketsMustNotBePrecededByBlankLine"/> class.
+    /// Unit tests for the <see cref="SA1508ClosingBracesMustNotBePrecededByBlankLine"/> class.
     /// </summary>
     public class SA1508UnitTests : CodeFixVerifier
     {
@@ -829,10 +833,61 @@ to determine the spacing with the close brace.
             await this.VerifyCSharpFixAsync(testCode, fixedTestCode).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Verifies that an invalid syntax will not crash the analyzer.
+        /// This is a regression test for #1534
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestInvalidSyntaxAsync()
+        {
+            var testCode = @"namespace TestNamespace
+{
+    public class TestClass /
+    {
+    }
+}
+";
+
+            DiagnosticResult[] expected =
+            {
+                new DiagnosticResult
+                {
+                    Id = "CS1022",
+                    Severity = DiagnosticSeverity.Error,
+                    Locations = new[] { new DiagnosticResultLocation("Test0.cs", 3, 28) },
+                    Message = "Type or namespace definition, or end-of-file expected"
+                },
+                new DiagnosticResult
+                {
+                    Id = "CS1513",
+                    Severity = DiagnosticSeverity.Error,
+                    Locations = new[] { new DiagnosticResultLocation("Test0.cs", 3, 28) },
+                    Message = "} expected"
+                },
+                new DiagnosticResult
+                {
+                    Id = "CS1514",
+                    Severity = DiagnosticSeverity.Error,
+                    Locations = new[] { new DiagnosticResultLocation("Test0.cs", 3, 28) },
+                    Message = "{ expected"
+                },
+                new DiagnosticResult
+                {
+                    Id = "CS1022",
+                    Severity = DiagnosticSeverity.Error,
+                    Locations = new[] { new DiagnosticResultLocation("Test0.cs", 6, 1) },
+                    Message = "Type or namespace definition, or end-of-file expected"
+                }
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+        }
+
         /// <inheritdoc/>
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()
         {
-            yield return new SA1508ClosingCurlyBracketsMustNotBePrecededByBlankLine();
+            yield return new SA1508ClosingBracesMustNotBePrecededByBlankLine();
         }
 
         /// <inheritdoc/>

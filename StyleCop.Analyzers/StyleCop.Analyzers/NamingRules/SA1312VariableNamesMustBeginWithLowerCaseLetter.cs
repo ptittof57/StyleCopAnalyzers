@@ -1,5 +1,9 @@
-﻿namespace StyleCop.Analyzers.NamingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.NamingRules
 {
+    using System;
     using System.Collections.Immutable;
     using Helpers;
     using Microsoft.CodeAnalysis;
@@ -20,7 +24,7 @@
     /// <c>NativeMethods</c> class.</para>
     /// </remarks>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class SA1312VariableNamesMustBeginWithLowerCaseLetter : DiagnosticAnalyzer
+    internal class SA1312VariableNamesMustBeginWithLowerCaseLetter : DiagnosticAnalyzer
     {
         /// <summary>
         /// The ID for diagnostics produced by the <see cref="SA1312VariableNamesMustBeginWithLowerCaseLetter"/> analyzer.
@@ -34,30 +38,39 @@
         private static readonly DiagnosticDescriptor Descriptor =
             new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, AnalyzerCategory.NamingRules, DiagnosticSeverity.Warning, AnalyzerConstants.EnabledByDefault, Description, HelpLink);
 
-        private static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsValue =
-            ImmutableArray.Create(Descriptor);
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
+        private static readonly Action<SyntaxNodeAnalysisContext> VariableDeclarationAction = HandleVariableDeclaration;
+        private static readonly Action<SyntaxNodeAnalysisContext> CatchDeclarationAction = HandleCatchDeclaration;
+        private static readonly Action<SyntaxNodeAnalysisContext> QueryContinuationAction = HandleQueryContinuation;
+        private static readonly Action<SyntaxNodeAnalysisContext> FromClauseAction = HandleFromClause;
+        private static readonly Action<SyntaxNodeAnalysisContext> LetClauseAction = HandleLetClause;
+        private static readonly Action<SyntaxNodeAnalysisContext> JoinClauseAction = HandleJoinClause;
+        private static readonly Action<SyntaxNodeAnalysisContext> JoinIntoClauseAction = HandleJoinIntoClause;
+        private static readonly Action<SyntaxNodeAnalysisContext> ForEachStatementAction = HandleForEachStatement;
 
         /// <inheritdoc/>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        {
-            get
-            {
-                return SupportedDiagnosticsValue;
-            }
-        }
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
+            ImmutableArray.Create(Descriptor);
 
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterCompilationStartAction(HandleCompilationStart);
+            context.RegisterCompilationStartAction(CompilationStartAction);
         }
 
         private static void HandleCompilationStart(CompilationStartAnalysisContext context)
         {
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleVariableDeclarationSyntax, SyntaxKind.VariableDeclaration);
+            context.RegisterSyntaxNodeActionHonorExclusions(VariableDeclarationAction, SyntaxKind.VariableDeclaration);
+            context.RegisterSyntaxNodeActionHonorExclusions(CatchDeclarationAction, SyntaxKind.CatchDeclaration);
+            context.RegisterSyntaxNodeActionHonorExclusions(QueryContinuationAction, SyntaxKind.QueryContinuation);
+            context.RegisterSyntaxNodeActionHonorExclusions(FromClauseAction, SyntaxKind.FromClause);
+            context.RegisterSyntaxNodeActionHonorExclusions(LetClauseAction, SyntaxKind.LetClause);
+            context.RegisterSyntaxNodeActionHonorExclusions(JoinClauseAction, SyntaxKind.JoinClause);
+            context.RegisterSyntaxNodeActionHonorExclusions(JoinIntoClauseAction, SyntaxKind.JoinIntoClause);
+            context.RegisterSyntaxNodeActionHonorExclusions(ForEachStatementAction, SyntaxKind.ForEachStatement);
         }
 
-        private static void HandleVariableDeclarationSyntax(SyntaxNodeAnalysisContext context)
+        private static void HandleVariableDeclaration(SyntaxNodeAnalysisContext context)
         {
             VariableDeclarationSyntax syntax = (VariableDeclarationSyntax)context.Node;
             if (syntax.Parent.IsKind(SyntaxKind.FieldDeclaration)
@@ -87,20 +100,60 @@
                 }
 
                 var identifier = variableDeclarator.Identifier;
-                if (identifier.IsMissing)
-                {
-                    continue;
-                }
-
-                string name = identifier.ValueText;
-                if (string.IsNullOrEmpty(name) || char.IsLower(name[0]))
-                {
-                    continue;
-                }
-
-                // Variable names must begin with lower-case letter
-                context.ReportDiagnostic(Diagnostic.Create(Descriptor, identifier.GetLocation(), name));
+                CheckIdentifier(context, identifier);
             }
+        }
+
+        private static void HandleCatchDeclaration(SyntaxNodeAnalysisContext context)
+        {
+            CheckIdentifier(context, ((CatchDeclarationSyntax)context.Node).Identifier);
+        }
+
+        private static void HandleQueryContinuation(SyntaxNodeAnalysisContext context)
+        {
+            CheckIdentifier(context, ((QueryContinuationSyntax)context.Node).Identifier);
+        }
+
+        private static void HandleFromClause(SyntaxNodeAnalysisContext context)
+        {
+            CheckIdentifier(context, ((FromClauseSyntax)context.Node).Identifier);
+        }
+
+        private static void HandleLetClause(SyntaxNodeAnalysisContext context)
+        {
+            CheckIdentifier(context, ((LetClauseSyntax)context.Node).Identifier);
+        }
+
+        private static void HandleJoinClause(SyntaxNodeAnalysisContext context)
+        {
+            CheckIdentifier(context, ((JoinClauseSyntax)context.Node).Identifier);
+        }
+
+        private static void HandleJoinIntoClause(SyntaxNodeAnalysisContext context)
+        {
+            CheckIdentifier(context, ((JoinIntoClauseSyntax)context.Node).Identifier);
+        }
+
+        private static void HandleForEachStatement(SyntaxNodeAnalysisContext context)
+        {
+            CheckIdentifier(context, ((ForEachStatementSyntax)context.Node).Identifier);
+        }
+
+        private static void CheckIdentifier(SyntaxNodeAnalysisContext context, SyntaxToken identifier)
+        {
+            if (identifier.IsMissing)
+            {
+                return;
+            }
+
+            string name = identifier.ValueText;
+            if (string.IsNullOrEmpty(name) || char.IsLower(name[0]))
+            {
+                return;
+            }
+
+            // Variable names must begin with lower-case letter
+            context.ReportDiagnostic(Diagnostic.Create(Descriptor, identifier.GetLocation(), name));
         }
     }
 }

@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.LayoutRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.LayoutRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -10,12 +13,12 @@
     using Xunit;
 
     /// <summary>
-    /// Unit tests for <see cref="SA1513ClosingCurlyBracketMustBeFollowedByBlankLine"/>
+    /// Unit tests for <see cref="SA1513ClosingBraceMustBeFollowedByBlankLine"/>
     /// </summary>
     public class SA1513UnitTests : CodeFixVerifier
     {
         /// <summary>
-        /// Verifies that all valid usages of a closing curly brace without a following blank line will report no diagnostic.
+        /// Verifies that all valid usages of a closing brace without a following blank line will report no diagnostic.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
@@ -390,6 +393,17 @@ public class Foo
             3
         }
         .Contains(3);
+
+    // This is a regression test for https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/1583
+    public void TestTernaryConstruction()
+    {
+        var target = contained
+            ? new Dictionary<string, string>
+                {
+                    { ""target"", ""_parent"" }
+                }
+            : new Dictionary<string, string>();
+    }
 }
 ";
 
@@ -397,7 +411,7 @@ public class Foo
         }
 
         /// <summary>
-        /// Verifies that all invalid usages of a closing curly brace without a following blank line will report a diagnostic.
+        /// Verifies that all invalid usages of a closing brace without a following blank line will report a diagnostic.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
@@ -534,6 +548,7 @@ public class Foo
         public async Task TestCodeFixAsync()
         {
             var testCode = @"using System;
+using System.Collections.Generic;
 
 public class Foo
 {
@@ -609,6 +624,7 @@ public class Foo
 ";
 
             var fixedTestCode = @"using System;
+using System.Collections.Generic;
 
 public class Foo
 {
@@ -723,10 +739,97 @@ public class TestClass
             await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Verifies that having an initializer as last parameter / argument will not raise any diagnostics.
+        /// This is a regression for #1713
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task VerifyThatInitializerAsLastParameterWillNotProduceDiagnosticAsync()
+        {
+            var testCode = @"
+using System;
+
+public class Program
+{
+    private class Foo : IDisposable
+    {
+        public int Bar { get; set; }
+
+        public void Dispose()
+        {
+        }
+    }
+
+    public static void Main(string[] args)
+    {
+        foreach (
+            var x in
+            new[]
+            {
+                1,
+                2,
+                3
+            })
+        {
+        }
+
+        using (
+            new Foo
+            {
+                Bar = 1
+            })
+        {
+        }
+
+        Console.WriteLine(
+            new[]
+            {
+                1,
+                2,
+                3
+            });
+    }
+}
+";
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that code commented out with four slashes is accepted.
+        /// This is a regression test for #2041
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestFourSlashCommentsAsync()
+        {
+            var testCode = @"
+public class TestClass
+{
+    public int Do(int i)
+    {
+        if (i > 2)
+        {
+            return 1;
+        }
+        //// else if (i == 2)
+        //// {
+        ////     return 2;
+        //// }
+
+        return 0;
+    }
+}
+";
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+        }
+
         /// <inheritdoc/>
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()
         {
-            yield return new SA1513ClosingCurlyBracketMustBeFollowedByBlankLine();
+            yield return new SA1513ClosingBraceMustBeFollowedByBlankLine();
         }
 
         /// <inheritdoc/>

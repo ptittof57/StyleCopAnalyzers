@@ -1,5 +1,9 @@
-﻿namespace StyleCop.Analyzers.ReadabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.ReadabilityRules
 {
+    using System;
     using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.Linq;
@@ -17,7 +21,7 @@
     /// <seealso href="https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1104.md">SA1104 Query clause must begin on new line when previous clause spans multiple lines</seealso>
     /// <seealso href="https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1105.md">SA1105 Query clauses spanning multiple lines must begin on own line</seealso>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class SA110xQueryClauses : DiagnosticAnalyzer
+    internal class SA110xQueryClauses : DiagnosticAnalyzer
     {
         private const string SA1102Identifier = "SA1102";
         private const string SA1103Identifier = "SA1103";
@@ -43,6 +47,9 @@
         private static readonly LocalizableString SA1105MessageFormat = new LocalizableResourceString(nameof(ReadabilityResources.SA1105MessageFormat), ReadabilityResources.ResourceManager, typeof(ReadabilityResources));
         private static readonly LocalizableString SA1105Description = new LocalizableResourceString(nameof(ReadabilityResources.SA1105Description), ReadabilityResources.ResourceManager, typeof(ReadabilityResources));
         private static readonly string SA1105HelpLink = "https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1105.md";
+
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
+        private static readonly Action<SyntaxNodeAnalysisContext> QueryExpressionAction = HandleQueryExpression;
 
         /// <summary>
         /// Gets the diagnostic descriptor for SA1102.
@@ -74,17 +81,21 @@
 
         /// <inheritdoc/>
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
-            ImmutableArray.Create(SA1102Descriptor, SA1103Descriptor, SA1104Descriptor, SA1105Descriptor);
+            ImmutableArray.Create(
+                SA1102Descriptor,
+                SA1103Descriptor,
+                SA1104Descriptor,
+                SA1105Descriptor);
 
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterCompilationStartAction(HandleCompilationStart);
+            context.RegisterCompilationStartAction(CompilationStartAction);
         }
 
         private static void HandleCompilationStart(CompilationStartAnalysisContext context)
         {
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleQueryExpression, SyntaxKind.QueryExpression);
+            context.RegisterSyntaxNodeActionHonorExclusions(QueryExpressionAction, SyntaxKind.QueryExpression);
         }
 
         private static void HandleQueryExpression(SyntaxNodeAnalysisContext context)

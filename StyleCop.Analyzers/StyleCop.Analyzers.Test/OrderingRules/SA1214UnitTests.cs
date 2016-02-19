@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.OrderingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.OrderingRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -92,7 +95,7 @@ public class Foo
 
             var expected = new[]
             {
-                this.CSharpDiagnostic().WithLocation(5, 33).WithArguments("private")
+                this.CSharpDiagnostic().WithLocation(5, 33)
             };
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
@@ -132,7 +135,7 @@ public class Foo
 
             var expected = new[]
             {
-                this.CSharpDiagnostic().WithLocation(4, 58).WithArguments("private")
+                this.CSharpDiagnostic().WithLocation(4, 58)
             };
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
@@ -169,8 +172,18 @@ public class Foo
     private int i = 0;
     private readonly int j = 0;
 }";
+            var fixedCode = @"
+public class Foo
+{
+    private readonly int j = 0;
+    private int i = 0;
+}";
 
-            await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            var expected = this.CSharpDiagnostic().WithLocation(5, 26);
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
         }
 
         [Fact]
@@ -185,7 +198,7 @@ public struct Foo
 
             var expected = new[]
             {
-                this.CSharpDiagnostic().WithLocation(5, 33).WithArguments("private")
+                this.CSharpDiagnostic().WithLocation(5, 33)
             };
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
@@ -229,8 +242,8 @@ public class Foo
 
             var expected = new[]
             {
-                this.CSharpDiagnostic().WithLocation(11, 33).WithArguments("public"),
-                this.CSharpDiagnostic().WithLocation(18, 37).WithArguments("private")
+                this.CSharpDiagnostic().WithLocation(11, 33),
+                this.CSharpDiagnostic().WithLocation(18, 37)
 
                 // line 21 should be reported by SA1201
             };
@@ -240,10 +253,8 @@ public class Foo
             var fixTestCode = @"
 public class Foo
 {
-
     public static readonly int  u = 5;
 
-    public static readonly int j = 0;
     public string s = ""qwe"";
     private static readonly int i = 0;
 
@@ -253,15 +264,45 @@ public class Foo
 
     public class FooInner 
     {
-        private static readonly int e = 1;
         private int aa = 0;
         public static readonly int t = 2;
+        private static readonly int e = 1;
         private static int z = 999;
     }
+
+    public static readonly int j = 0;
 }";
+
             await this.VerifyCSharpDiagnosticAsync(fixTestCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
-            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpFixAsync(testCode, fixTestCode).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestStaticReadonlyPrecededByClassAsync()
+        {
+            var testCode = @"
+public class Foo
+{
+    public static readonly int  u = 5;
+    public string s = ""qwe"";
+    private static readonly int i = 0;
+
+    public void Ff() {}
+
+    public static string s2 = ""qwe"";
+
+    public class FooInner 
+    {
+        private int aa = 0;
+        public static readonly int t = 2;
+        private static readonly int e = 1;
+        private static int z = 999;
+    }
+
+    public static readonly int j = 0;
+}";
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }
 
         [Fact]
@@ -279,12 +320,12 @@ public class Foo
 
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()
         {
-            yield return new SA1214StaticReadonlyElementsMustAppearBeforeStaticNonReadonlyElements();
+            yield return new SA1214ReadonlyElementsMustAppearBeforeNonReadonlyElements();
         }
 
         protected override CodeFixProvider GetCSharpCodeFixProvider()
         {
-            return new SA1203SA1214SA1215CodeFixProvider();
+            return new ElementOrderCodeFixProvider();
         }
     }
 }

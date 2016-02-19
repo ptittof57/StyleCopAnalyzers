@@ -1,8 +1,12 @@
-﻿namespace StyleCop.Analyzers.Test.Settings
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.Settings
 {
     using System.Collections.Immutable;
     using System.Threading;
     using System.Threading.Tasks;
+    using Analyzers.Settings.ObjectModel;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.Diagnostics;
     using Microsoft.CodeAnalysis.Text;
@@ -18,10 +22,22 @@
         [Fact]
         public void VerifySettingsDefaults()
         {
-            var styleCopSettings = SettingsHelper.GetStyleCopSettings(default(SyntaxTreeAnalysisContext));
+            var styleCopSettings = SettingsHelper.GetStyleCopSettings(default(SyntaxTreeAnalysisContext), CancellationToken.None);
 
             Assert.Equal("PlaceholderCompany", styleCopSettings.DocumentationRules.CompanyName);
             Assert.Equal("Copyright (c) PlaceholderCompany. All rights reserved.", styleCopSettings.DocumentationRules.CopyrightText);
+            Assert.True(styleCopSettings.NamingRules.AllowCommonHungarianPrefixes);
+            Assert.Equal(0, styleCopSettings.NamingRules.AllowedHungarianPrefixes.Length);
+
+            Assert.NotNull(styleCopSettings.OrderingRules);
+            Assert.Equal(UsingDirectivesPlacement.InsideNamespace, styleCopSettings.OrderingRules.UsingDirectivesPlacement);
+
+            Assert.NotNull(styleCopSettings.LayoutRules);
+            Assert.Equal(EndOfFileHandling.Allow, styleCopSettings.LayoutRules.NewlineAtEndOfFile);
+
+            Assert.NotNull(styleCopSettings.SpacingRules);
+            Assert.NotNull(styleCopSettings.ReadabilityRules);
+            Assert.NotNull(styleCopSettings.MaintainabilityRules);
         }
 
         /// <summary>
@@ -37,16 +53,28 @@
     ""documentationRules"": {
       ""companyName"": ""TestCompany"",
       ""copyrightText"": ""Custom copyright text.""
+    },
+    ""namingRules"": {
+        ""allowCommonHungarianPrefixes"": false,
+        ""allowedHungarianPrefixes"": [""a"", ""ab""]
+    },
+    ""orderingRules"": {
+        ""usingDirectivesPlacement"": ""outsideNamespace""
     }
   }
 }
 ";
             var context = await CreateAnalysisContextAsync(settings).ConfigureAwait(false);
 
-            var styleCopSettings = context.GetStyleCopSettings();
+            var styleCopSettings = context.GetStyleCopSettings(CancellationToken.None);
 
             Assert.Equal("TestCompany", styleCopSettings.DocumentationRules.CompanyName);
             Assert.Equal("Custom copyright text.", styleCopSettings.DocumentationRules.CopyrightText);
+            Assert.False(styleCopSettings.NamingRules.AllowCommonHungarianPrefixes);
+            Assert.Equal(new[] { "a", "ab" }, styleCopSettings.NamingRules.AllowedHungarianPrefixes);
+
+            Assert.NotNull(styleCopSettings.OrderingRules);
+            Assert.Equal(UsingDirectivesPlacement.OutsideNamespace, styleCopSettings.OrderingRules.UsingDirectivesPlacement);
         }
 
         /// <summary>
@@ -67,7 +95,7 @@
 ";
             var context = await CreateAnalysisContextAsync(settings).ConfigureAwait(false);
 
-            var styleCopSettings = context.GetStyleCopSettings();
+            var styleCopSettings = context.GetStyleCopSettings(CancellationToken.None);
 
             Assert.Equal("TestCompany", styleCopSettings.DocumentationRules.CompanyName);
             Assert.Equal("Copyright (c) TestCompany. All rights reserved.", styleCopSettings.DocumentationRules.CopyrightText);
@@ -87,7 +115,7 @@
 ";
             var context = await CreateAnalysisContextAsync(settings).ConfigureAwait(false);
 
-            var styleCopSettings = context.GetStyleCopSettings();
+            var styleCopSettings = context.GetStyleCopSettings(CancellationToken.None);
 
             Assert.Equal("[CircularReference]", styleCopSettings.DocumentationRules.CopyrightText);
         }
@@ -106,7 +134,7 @@
 ";
             var context = await CreateAnalysisContextAsync(settings).ConfigureAwait(false);
 
-            var styleCopSettings = context.GetStyleCopSettings();
+            var styleCopSettings = context.GetStyleCopSettings(CancellationToken.None);
 
             Assert.Equal("[InvalidReference]", styleCopSettings.DocumentationRules.CopyrightText);
         }
@@ -117,7 +145,7 @@
             var settings = @"This is not a JSON file.";
             var context = await CreateAnalysisContextAsync(settings).ConfigureAwait(false);
 
-            var styleCopSettings = context.GetStyleCopSettings();
+            var styleCopSettings = context.GetStyleCopSettings(CancellationToken.None);
 
             // The result is the same as the default settings.
             Assert.Equal("PlaceholderCompany", styleCopSettings.DocumentationRules.CompanyName);
@@ -137,7 +165,7 @@
             var document = solution.GetDocument(documentId);
             var syntaxTree = await document.GetSyntaxTreeAsync().ConfigureAwait(false);
 
-            var stylecopJSONFile = new AdditionalTextHelper("stylecop.json", stylecopJSON);
+            var stylecopJSONFile = new AdditionalTextHelper(SettingsHelper.SettingsFileName, stylecopJSON);
             var additionalFiles = ImmutableArray.Create<AdditionalText>(stylecopJSONFile);
             var analyzerOptions = new AnalyzerOptions(additionalFiles);
 

@@ -1,5 +1,9 @@
-﻿namespace StyleCop.Analyzers.LayoutRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.LayoutRules
 {
+    using System;
     using System.Collections.Immutable;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
@@ -33,7 +37,7 @@
     /// </code>
     /// </remarks>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class SA1510ChainedStatementBlocksMustNotBePrecededByBlankLine : DiagnosticAnalyzer
+    internal class SA1510ChainedStatementBlocksMustNotBePrecededByBlankLine : DiagnosticAnalyzer
     {
         /// <summary>
         /// The ID for diagnostics produced by the
@@ -48,29 +52,26 @@
         private static readonly DiagnosticDescriptor Descriptor =
             new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, AnalyzerCategory.LayoutRules, DiagnosticSeverity.Warning, AnalyzerConstants.EnabledByDefault, Description, HelpLink);
 
-        private static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsValue =
-            ImmutableArray.Create(Descriptor);
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
+        private static readonly Action<SyntaxNodeAnalysisContext> ElseStatementAction = HandleElseStatement;
+        private static readonly Action<SyntaxNodeAnalysisContext> CatchClauseAction = HandleCatchClause;
+        private static readonly Action<SyntaxNodeAnalysisContext> FinallyClauseAction = HandleFinallyClause;
 
         /// <inheritdoc/>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        {
-            get
-            {
-                return SupportedDiagnosticsValue;
-            }
-        }
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
+            ImmutableArray.Create(Descriptor);
 
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterCompilationStartAction(HandleCompilationStart);
+            context.RegisterCompilationStartAction(CompilationStartAction);
         }
 
         private static void HandleCompilationStart(CompilationStartAnalysisContext context)
         {
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleElseStatement, SyntaxKind.ElseClause);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleCatchClause, SyntaxKind.CatchClause);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleFinallyClause, SyntaxKind.FinallyClause);
+            context.RegisterSyntaxNodeActionHonorExclusions(ElseStatementAction, SyntaxKind.ElseClause);
+            context.RegisterSyntaxNodeActionHonorExclusions(CatchClauseAction, SyntaxKind.CatchClause);
+            context.RegisterSyntaxNodeActionHonorExclusions(FinallyClauseAction, SyntaxKind.FinallyClause);
         }
 
         private static void HandleElseStatement(SyntaxNodeAnalysisContext context)
@@ -78,7 +79,7 @@
             var elseClause = (ElseClauseSyntax)context.Node;
             var elseKeyword = elseClause.ElseKeyword;
 
-            if (!elseKeyword.HasLeadingBlankLines())
+            if (!elseKeyword.IsPrecededByBlankLines())
             {
                 return;
             }
@@ -91,7 +92,7 @@
             var catchClause = (CatchClauseSyntax)context.Node;
             var catchKeyword = catchClause.CatchKeyword;
 
-            if (!catchKeyword.HasLeadingBlankLines())
+            if (!catchKeyword.IsPrecededByBlankLines())
             {
                 return;
             }
@@ -104,7 +105,7 @@
             var finallyClause = (FinallyClauseSyntax)context.Node;
             var finallyKeyword = finallyClause.FinallyKeyword;
 
-            if (!finallyKeyword.HasLeadingBlankLines())
+            if (!finallyKeyword.IsPrecededByBlankLines())
             {
                 return;
             }

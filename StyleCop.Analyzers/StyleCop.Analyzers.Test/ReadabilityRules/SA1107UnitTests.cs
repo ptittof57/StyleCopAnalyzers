@@ -1,8 +1,12 @@
-﻿namespace StyleCop.Analyzers.Test.ReadabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.ReadabilityRules
 {
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CodeFixes;
     using Microsoft.CodeAnalysis.Diagnostics;
     using StyleCop.Analyzers.ReadabilityRules;
@@ -117,6 +121,35 @@ class ClassName
 }
 ";
             await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestThatAnalyzerIgnoresStatementsWithMissingTokenAsync()
+        {
+            string testCode = @"
+using System;
+class ClassName
+{
+    public static void Foo(string a, string b)
+    {
+        int i
+        if (true)
+        {
+            Console.WriteLine(""Bar"");
+        }
+    }
+}
+";
+            DiagnosticResult expected = new DiagnosticResult
+            {
+                Id = "CS1002",
+                Message = "; expected",
+                Severity = DiagnosticSeverity.Error,
+            };
+
+            expected = expected.WithLocation(7, 14);
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
         }
 
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()

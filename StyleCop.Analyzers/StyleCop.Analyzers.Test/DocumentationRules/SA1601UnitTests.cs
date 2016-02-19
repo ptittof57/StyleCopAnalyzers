@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.DocumentationRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.DocumentationRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -14,7 +17,6 @@
     /// </summary>
     public class SA1601UnitTests : DiagnosticVerifier
     {
-        private const string SettingsFileName = "stylecop.json";
         private const string TestSettings = @"
 {
   ""settings"": {

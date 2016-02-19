@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.LayoutRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.LayoutRules
 {
     using System;
     using System.Collections.Generic;
@@ -68,7 +71,7 @@
     /// </code>
     /// </remarks>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class SA1512SingleLineCommentsMustNotBeFollowedByBlankLine : DiagnosticAnalyzer
+    internal class SA1512SingleLineCommentsMustNotBeFollowedByBlankLine : DiagnosticAnalyzer
     {
         /// <summary>
         /// The ID for diagnostics produced by the <see cref="SA1512SingleLineCommentsMustNotBeFollowedByBlankLine"/>
@@ -83,16 +86,16 @@
         private static readonly DiagnosticDescriptor Descriptor =
             new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, AnalyzerCategory.LayoutRules, DiagnosticSeverity.Warning, AnalyzerConstants.EnabledByDefault, Description, HelpLink);
 
-        private static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsValue =
-            ImmutableArray.Create(Descriptor);
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
 
         /// <inheritdoc/>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => SupportedDiagnosticsValue;
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
+            ImmutableArray.Create(Descriptor);
 
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterCompilationStartAction(HandleCompilationStart);
+            context.RegisterCompilationStartAction(CompilationStartAction);
         }
 
         private static void HandleCompilationStart(CompilationStartAnalysisContext context)
@@ -114,6 +117,8 @@
                 }
 
                 int triviaIndex;
+
+                // PERF: Explicitly cast to IReadOnlyList so we only box once.
                 var triviaList = TriviaHelper.GetContainingTriviaList(trivia, out triviaIndex);
 
                 if (!IsOnOwnLine(triviaList, triviaIndex))
@@ -163,7 +168,8 @@
             }
         }
 
-        private static bool IsOnOwnLine(IReadOnlyList<SyntaxTrivia> triviaList, int triviaIndex)
+        private static bool IsOnOwnLine<T>(T triviaList, int triviaIndex)
+            where T : IReadOnlyList<SyntaxTrivia>
         {
             while (triviaIndex >= 0)
             {
@@ -178,7 +184,8 @@
             return false;
         }
 
-        private static bool IsPartOfFileHeader(IReadOnlyList<SyntaxTrivia> triviaList, int triviaIndex)
+        private static bool IsPartOfFileHeader<T>(T triviaList, int triviaIndex)
+            where T : IReadOnlyList<SyntaxTrivia>
         {
             if (triviaList[0].FullSpan.Start > 0)
             {
@@ -212,7 +219,8 @@
             return true;
         }
 
-        private static int GetTrailingBlankLineCount(IReadOnlyList<SyntaxTrivia> triviaList, ref int triviaIndex)
+        private static int GetTrailingBlankLineCount<T>(T triviaList, ref int triviaIndex)
+            where T : IReadOnlyList<SyntaxTrivia>
         {
             int eolCount = 0;
 

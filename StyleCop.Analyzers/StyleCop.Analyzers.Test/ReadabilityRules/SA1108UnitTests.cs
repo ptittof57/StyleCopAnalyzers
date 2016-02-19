@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.ReadabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.ReadabilityRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -11,7 +14,7 @@
     public class SA1108UnitTests : DiagnosticVerifier
     {
         [Fact]
-        public async Task TestIfStatementCommentBetweenStatementDeclarationAndOpeningCurlyBracketAsync()
+        public async Task TestIfStatementCommentBetweenStatementDeclarationAndOpeningBraceAsync()
         {
             var testCode = @"
 public class Foo
@@ -39,7 +42,7 @@ public class Foo
         }
 
         [Fact]
-        public async Task TestIfStatementCommentBetweenStatementDeclarationAndOpeningCurlyBracketCommentedCodeAsync()
+        public async Task TestIfStatementCommentBetweenStatementDeclarationAndOpeningBraceCommentedCodeAsync()
         {
             var testCode = @"
 public class Foo
@@ -57,7 +60,7 @@ public class Foo
         }
 
         [Fact]
-        public async Task TestIfWithPreprocessorDirectiveCommentBetweenStatementDeclarationAndOpeningCurlyBracketCommentedCodeAsync()
+        public async Task TestIfWithPreprocessorDirectiveCommentBetweenStatementDeclarationAndOpeningBraceCommentedCodeAsync()
         {
             var testCode = @"
 public class Foo
@@ -98,7 +101,7 @@ public class Foo
         }
 
         [Fact]
-        public async Task TestWhileStatementCommentBetweenStatementDeclarationAndOpeningCurlyBracketAsync()
+        public async Task TestWhileStatementCommentBetweenStatementDeclarationAndOpeningBraceAsync()
         {
             var testCode = @"
 public class Foo
@@ -119,7 +122,7 @@ public class Foo
         }
 
         [Fact]
-        public async Task TestWhileStatementCommentBetweenStatementDeclarationAndOpeningCurlyBracketOneLineAsync()
+        public async Task TestWhileStatementCommentBetweenStatementDeclarationAndOpeningBraceOneLineAsync()
         {
             var testCode = @"
 public class Foo
@@ -137,7 +140,7 @@ public class Foo
         }
 
         [Fact]
-        public async Task TestDoWhileStatementCommentBetweenStatementDeclarationAndOpeningCurlyBracketAsync()
+        public async Task TestDoWhileStatementCommentBetweenStatementDeclarationAndOpeningBraceAsync()
         {
             var testCode = @"
 public class Foo
@@ -159,7 +162,7 @@ public class Foo
         }
 
         [Fact]
-        public async Task TestCheckedUncheckedStatementCommentBetweenStatementDeclarationAndOpeningCurlyBracketAsync()
+        public async Task TestCheckedUncheckedStatementCommentBetweenStatementDeclarationAndOpeningBraceAsync()
         {
             var testCode = @"
 public class Foo
@@ -187,7 +190,7 @@ public class Foo
         }
 
         [Fact]
-        public async Task TestFixedStatementCommentBetweenStatementDeclarationAndOpeningCurlyBracketAsync()
+        public async Task TestFixedStatementCommentBetweenStatementDeclarationAndOpeningBraceAsync()
         {
             var testCode = @"
 public class TestUnsafe
@@ -215,7 +218,7 @@ public class TestUnsafe
         }
 
         [Fact]
-        public async Task TestTryCatchFinallyStatementCommentBetweenStatementDeclarationAndOpeningCurlyBracketAsync()
+        public async Task TestTryCatchFinallyStatementCommentBetweenStatementDeclarationAndOpeningBraceAsync()
         {
             var testCode = @"
 public class Foo
@@ -255,7 +258,7 @@ public class Foo
         }
 
         [Fact]
-        public async Task TestSwitchStatementCommentBetweenStatementDeclarationAndOpeningCurlyBracketAsync()
+        public async Task TestSwitchStatementCommentBetweenStatementDeclarationAndOpeningBraceAsync()
         {
             var testCode = @"
 public class Foo
@@ -282,7 +285,7 @@ public class Foo
         }
 
         [Fact]
-        public async Task TestForStatementCommentBetweenStatementDeclarationAndOpeningCurlyBracketAsync()
+        public async Task TestForStatementCommentBetweenStatementDeclarationAndOpeningBraceAsync()
         {
             var testCode = @"
 public class Foo
@@ -304,7 +307,7 @@ public class Foo
         }
 
         [Fact]
-        public async Task TestForeachStatementCommentBetweenStatementDeclarationAndOpeningCurlyBracketAsync()
+        public async Task TestForeachStatementCommentBetweenStatementDeclarationAndOpeningBraceAsync()
         {
             var testCode = @"
 public class Foo
@@ -326,7 +329,7 @@ public class Foo
         }
 
         [Fact]
-        public async Task TestLockStatementCommentBetweenStatementDeclarationAndOpeningCurlyBracketAsync()
+        public async Task TestLockStatementCommentBetweenStatementDeclarationAndOpeningBraceAsync()
         {
             var testCode = @"
 public class Foo
@@ -348,7 +351,7 @@ public class Foo
         }
 
         [Fact]
-        public async Task TestMethodDeclarationCommentBetweenDeclarationAndOpeningCurlyBracketAsync()
+        public async Task TestMethodDeclarationCommentBetweenDeclarationAndOpeningBraceAsync()
         {
             var testCode = @"
 public class Bar
@@ -365,7 +368,7 @@ public class Bar
         }
 
         [Fact]
-        public async Task TestClassDeclarationCommentBetweenDeclarationAndOpeningCurlyBracketAsync()
+        public async Task TestClassDeclarationCommentBetweenDeclarationAndOpeningBraceAsync()
         {
             var testCode = @"
 namespace Foo
@@ -382,7 +385,7 @@ namespace Foo
         }
 
         [Fact]
-        public async Task TestPropertyDeclarationCommentBetweenDeclarationAndOpeningCurlyBracketAsync()
+        public async Task TestPropertyDeclarationCommentBetweenDeclarationAndOpeningBraceAsync()
         {
             var testCode = @"
 namespace Foo
@@ -408,7 +411,7 @@ namespace Foo
         }
 
         [Fact]
-        public async Task TestNamespaceDeclarationCommentBetweenDeclarationAndOpeningCurlyBracketAsync()
+        public async Task TestNamespaceDeclarationCommentBetweenDeclarationAndOpeningBraceAsync()
         {
             var testCode = @"
 namespace Foo

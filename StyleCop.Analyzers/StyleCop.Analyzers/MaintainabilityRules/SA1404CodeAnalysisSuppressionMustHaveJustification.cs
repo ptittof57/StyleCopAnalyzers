@@ -1,5 +1,10 @@
-﻿namespace StyleCop.Analyzers.MaintainabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.MaintainabilityRules
 {
+    using System;
+    using System.Collections.Concurrent;
     using System.Collections.Immutable;
     using System.Diagnostics.CodeAnalysis;
     using Helpers;
@@ -25,7 +30,7 @@
     /// </code>
     /// </remarks>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class SA1404CodeAnalysisSuppressionMustHaveJustification : DiagnosticAnalyzer
+    internal class SA1404CodeAnalysisSuppressionMustHaveJustification : DiagnosticAnalyzer
     {
         /// <summary>
         /// The placeholder to insert as part of the code fix.
@@ -45,27 +50,21 @@
         private static readonly DiagnosticDescriptor Descriptor =
             new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, AnalyzerCategory.MaintainabilityRules, DiagnosticSeverity.Warning, AnalyzerConstants.EnabledByDefault, Description, HelpLink);
 
-        private static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsValue =
-            ImmutableArray.Create(Descriptor);
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
 
         /// <inheritdoc/>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        {
-            get
-            {
-                return SupportedDiagnosticsValue;
-            }
-        }
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
+            ImmutableArray.Create(Descriptor);
 
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterCompilationStartAction(HandleCompilationStart);
+            context.RegisterCompilationStartAction(CompilationStartAction);
         }
 
         private static void HandleCompilationStart(CompilationStartAnalysisContext context)
         {
-            AnalyzerInstance instance = new AnalyzerInstance();
+            AnalyzerInstance instance = new AnalyzerInstance(context.Compilation.GetOrCreateUsingAliasCache());
             context.RegisterSyntaxNodeActionHonorExclusions(instance.HandleAttributeNode, SyntaxKind.Attribute);
         }
 
@@ -74,18 +73,25 @@
         /// </summary>
         private sealed class AnalyzerInstance
         {
+            private readonly ConcurrentDictionary<SyntaxTree, bool> usingAliasCache;
+
             /// <summary>
             /// A lazily-initialized reference to <see cref="SuppressMessageAttribute"/> within the context of a
             /// particular <see cref="Compilation"/>.
             /// </summary>
             private INamedTypeSymbol suppressMessageAttribute;
 
+            public AnalyzerInstance(ConcurrentDictionary<SyntaxTree, bool> usingAliasCache)
+            {
+                this.usingAliasCache = usingAliasCache;
+            }
+
             public void HandleAttributeNode(SyntaxNodeAnalysisContext context)
             {
                 var attribute = (AttributeSyntax)context.Node;
 
                 // Return fast if the name doesn't match and the file doesn't contain any using alias directives
-                if (!attribute.SyntaxTree.ContainsUsingAlias())
+                if (!attribute.SyntaxTree.ContainsUsingAlias(this.usingAliasCache))
                 {
                     SimpleNameSyntax simpleNameSyntax = attribute.Name as SimpleNameSyntax;
                     if (simpleNameSyntax == null)

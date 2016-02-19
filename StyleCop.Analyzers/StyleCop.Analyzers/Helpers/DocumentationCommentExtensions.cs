@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Helpers
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Helpers
 {
     using System;
     using System.Collections.Generic;
@@ -8,7 +11,7 @@
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using StyleCop.Analyzers.SpacingRules;
 
-    internal static class DocumentationSyntaxExtensions
+    internal static class DocumentationCommentExtensions
     {
         public static DocumentationCommentTriviaSyntax GetDocumentationCommentTriviaSyntax(this SyntaxNode node)
         {
@@ -17,11 +20,17 @@
                 return null;
             }
 
-            return node
-                .GetLeadingTrivia()
-                .Select(i => i.GetStructure())
-                .OfType<DocumentationCommentTriviaSyntax>()
-                .FirstOrDefault();
+            foreach (var leadingTrivia in node.GetLeadingTrivia())
+            {
+                var structure = leadingTrivia.GetStructure() as DocumentationCommentTriviaSyntax;
+
+                if (structure != null)
+                {
+                    return structure;
+                }
+            }
+
+            return null;
         }
 
         public static XmlNodeSyntax GetFirstXmlElement(this SyntaxList<XmlNodeSyntax> content, string elementName)
@@ -143,6 +152,11 @@
 
             for (int i = 0; i < removeFromEnd; i++)
             {
+                if (!lastSyntaxTokens.Any())
+                {
+                    break;
+                }
+
                 lastSyntaxTokens = lastSyntaxTokens.RemoveAt(lastSyntaxTokens.Count - 1);
             }
 

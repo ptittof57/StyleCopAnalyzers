@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.DocumentationRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.DocumentationRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -237,6 +240,43 @@ public class ClassName
 }";
 
             DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(10, 22);
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Regression test for DotNetAnalyzers/StyleCopAnalyzers#1942.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestPropertyWithEmptySummaryAsync()
+        {
+            var testCode = @"
+public class ClassName
+{
+    /// <summary>
+    /// </summary>
+    public int Property
+    {
+        get;
+    }
+}";
+
+            var fixedCode = @"
+public class ClassName
+{
+    /// <summary>
+    /// </summary>
+    /// <value>
+    /// 
+    /// </value>
+    public int Property
+    {
+        get;
+    }
+}";
+
+            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(6, 16);
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
         }

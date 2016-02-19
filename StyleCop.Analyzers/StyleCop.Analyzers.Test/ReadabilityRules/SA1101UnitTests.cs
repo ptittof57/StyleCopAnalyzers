@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.ReadabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.ReadabilityRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -258,6 +261,43 @@
             };
 
             await this.VerifyCSharpDiagnosticAsync(ReferenceCode, expected, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestPrefixLocalCallsWithThisWithGenericArgumentsAsync()
+        {
+            string testCode = @"public class Test_SA1101
+{
+    public void Foo()
+    {
+        ConvertAll(42); // SA1101
+        this.ConvertAll(42); // no SA1101
+        ConvertAll<int>(42); // SA1101
+        this.ConvertAll<int>(42); // no SA1101
+    }
+    public void ConvertAll<T>(T value) { }
+}";
+            string fixedCode = @"public class Test_SA1101
+{
+    public void Foo()
+    {
+        this.ConvertAll(42); // SA1101
+        this.ConvertAll(42); // no SA1101
+        this.ConvertAll<int>(42); // SA1101
+        this.ConvertAll<int>(42); // no SA1101
+    }
+    public void ConvertAll<T>(T value) { }
+}";
+
+            var expected = new[]
+            {
+                this.CSharpDiagnostic().WithLocation(5, 9),
+                this.CSharpDiagnostic().WithLocation(7, 9)
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
         }
 
         [Fact]

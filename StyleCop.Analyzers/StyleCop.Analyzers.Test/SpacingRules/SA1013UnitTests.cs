@@ -1,8 +1,12 @@
-﻿namespace StyleCop.Analyzers.Test.SpacingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.SpacingRules
 {
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CodeFixes;
     using Microsoft.CodeAnalysis.Diagnostics;
     using StyleCop.Analyzers.SpacingRules;
@@ -10,16 +14,16 @@
     using Xunit;
 
     /// <summary>
-    /// Unit tests for <see cref="SA1013ClosingCurlyBracketsMustBeSpacedCorrectly"/>
+    /// Unit tests for <see cref="SA1013ClosingBracesMustBeSpacedCorrectly"/>
     /// </summary>
     public class SA1013UnitTests : CodeFixVerifier
     {
         /// <summary>
-        /// Verifies that the analyzer will properly handle valid closing curly brackets.
+        /// Verifies that the analyzer will properly handle valid closing braces.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
-        public async Task TestValidCurlyBracketSpacingAsync()
+        public async Task TestValidBraceSpacingAsync()
         {
             var testCode = @"namespace TestNamespace
 {
@@ -39,7 +43,7 @@
         }
 
         /// <summary>
-        /// Verifies that the analyzer will properly handle closing curly brackets in string interpolation.
+        /// Verifies that the analyzer will properly handle closing braces in string interpolation.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
@@ -93,7 +97,7 @@
         }
 
         /// <summary>
-        /// Verifies that the analyzer will properly handle closing curly brackets in property declaration.
+        /// Verifies that the analyzer will properly handle closing braces in property declaration.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
@@ -130,11 +134,11 @@
         }
 
         /// <summary>
-        /// Verifies that the analyzer will properly handle closing curly brackets in nested curly brackets.
+        /// Verifies that the analyzer will properly handle closing braces in nested braces.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
-        public async Task TestNestedCurlyBracketsAsync()
+        public async Task TestNestedBracesAsync()
         {
             var testCode = @"namespace TestNamespace
 {
@@ -182,11 +186,11 @@
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
-            await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode, numberOfFixAllIterations: 2, cancellationToken: CancellationToken.None).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Verifies that the analyzer will properly handle closing curly brackets with a trailing comma.
+        /// Verifies that the analyzer will properly handle closing braces with a trailing comma.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
@@ -204,12 +208,12 @@
 }
 ";
 
-            // space between closing curly bracket and closing parenthesis should be reported by SA1001
+            // space between closing brace and closing parenthesis should be reported by SA1001
             await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Verifies that the analyzer will properly handle closing curly brackets with a trailing semicolon.
+        /// Verifies that the analyzer will properly handle closing braces with a trailing semicolon.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
@@ -228,12 +232,12 @@
 }
 ";
 
-            // space between closing curly bracket and semicolon should be reported by SA1002
+            // space between closing brace and semicolon should be reported by SA1002
             await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Verifies that the analyzer will properly handle closing curly brackets with a trailing dot.
+        /// Verifies that the analyzer will properly handle closing braces with a trailing dot.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
@@ -252,12 +256,12 @@
 }
 ";
 
-            // space between closing curly bracket and dot should be reported by SA1019
+            // space between closing brace and dot should be reported by SA1019
             await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Verifies that the analyzer will properly handle closing curly brackets with a trailing question dot token.
+        /// Verifies that the analyzer will properly handle closing braces with a trailing question dot token.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
@@ -276,12 +280,12 @@
 }
 ";
 
-            // space between closing curly bracket and question dot should be reported by SA1019
+            // space between closing brace and question dot should be reported by SA1019
             await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Verifies that the analyzer will properly handle closing curly brackets in parentheses.
+        /// Verifies that the analyzer will properly handle closing braces in parentheses.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
@@ -325,7 +329,7 @@
 }
 ";
 
-            // space between closing curly bracket and closing parenthesis should be reported by SA1009
+            // space between closing brace and closing parenthesis should be reported by SA1009
             DiagnosticResult[] expected =
             {
                 this.CSharpDiagnostic().WithLocation(12, 39).WithArguments(string.Empty, "preceded"),
@@ -358,7 +362,7 @@
 }
 ";
 
-            // no space between closing curly bracket and closing bracket should not be reported by SA1013
+            // no space between closing brace and closing bracket should not be reported by SA1013
             await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }
 
@@ -381,16 +385,38 @@
             await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }
 
+        [Fact]
+        public async Task TestMissingTokenAsync()
+        {
+            string testCode = @"
+class ClassName
+{
+";
+
+            DiagnosticResult[] expected =
+            {
+                new DiagnosticResult
+                {
+                    Id = "CS1513",
+                    Severity = DiagnosticSeverity.Error,
+                    Message = "} expected",
+                    Locations = new[] { new DiagnosticResultLocation("Test0.cs", 3, 2) }
+                }
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+        }
+
         /// <inheritdoc/>
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()
         {
-            yield return new SA1013ClosingCurlyBracketsMustBeSpacedCorrectly();
+            yield return new SA1013ClosingBracesMustBeSpacedCorrectly();
         }
 
         /// <inheritdoc/>
         protected override CodeFixProvider GetCSharpCodeFixProvider()
         {
-            return new OpenCloseSpacingCodeFixProvider();
+            return new TokenSpacingCodeFixProvider();
         }
     }
 }

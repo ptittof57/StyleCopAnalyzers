@@ -1,5 +1,9 @@
-﻿namespace StyleCop.Analyzers.DocumentationRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.DocumentationRules
 {
+    using System;
     using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.Linq;
@@ -24,7 +28,7 @@
     /// parameters on the element, or if the parameter documentation is not listed in the same order as the element's parameters.</para>
     /// </remarks>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class SA1612ElementParameterDocumentationMustMatchElementParameters : DiagnosticAnalyzer
+    internal class SA1612ElementParameterDocumentationMustMatchElementParameters : DiagnosticAnalyzer
     {
         /// <summary>
         /// The ID for diagnostics produced by the
@@ -44,27 +48,22 @@
         private static readonly DiagnosticDescriptor OrderDescriptor =
                    new DiagnosticDescriptor(DiagnosticId, Title, ParamWrongOrderMessageFormat, AnalyzerCategory.DocumentationRules, DiagnosticSeverity.Warning, AnalyzerConstants.EnabledByDefault, Description, HelpLink);
 
-        private static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsValue =
-            ImmutableArray.Create(MissingParameterDescriptor);
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
+        private static readonly Action<SyntaxNodeAnalysisContext> DocumentationTriviaAction = HandleDocumentationTrivia;
 
         /// <inheritdoc/>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        {
-            get
-            {
-                return SupportedDiagnosticsValue;
-            }
-        }
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
+            ImmutableArray.Create(MissingParameterDescriptor);
 
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterCompilationStartAction(HandleCompilationStart);
+            context.RegisterCompilationStartAction(CompilationStartAction);
         }
 
         private static void HandleCompilationStart(CompilationStartAnalysisContext context)
         {
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleDocumentationTrivia, SyntaxKind.SingleLineDocumentationCommentTrivia);
+            context.RegisterSyntaxNodeActionHonorExclusions(DocumentationTriviaAction, SyntaxKind.SingleLineDocumentationCommentTrivia);
         }
 
         private static void HandleDocumentationTrivia(SyntaxNodeAnalysisContext context)
@@ -113,8 +112,12 @@
             }
             else if (parentParameters.Length <= index || parentParameters[index] != nameAttribute.Identifier.Identifier.ValueText)
             {
-                context.ReportDiagnostic(Diagnostic.Create(OrderDescriptor, nameAttribute?.Identifier?.GetLocation() ?? alternativeDiagnosticLocation,
-                    nameAttribute.Identifier.Identifier.ValueText, parentParameters.IndexOf(nameAttribute.Identifier.Identifier.ValueText) + 1));
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        OrderDescriptor,
+                        nameAttribute?.Identifier?.GetLocation() ?? alternativeDiagnosticLocation,
+                        nameAttribute.Identifier.Identifier.ValueText,
+                        parentParameters.IndexOf(nameAttribute.Identifier.Identifier.ValueText) + 1));
             }
         }
 

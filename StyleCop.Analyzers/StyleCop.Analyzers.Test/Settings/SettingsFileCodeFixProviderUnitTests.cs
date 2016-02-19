@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.Settings
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.Settings
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -16,14 +19,12 @@
     /// </summary>
     public class SettingsFileCodeFixProviderUnitTests : CodeFixVerifier
     {
-        private const string StyleCopSettingsFileName = "stylecop.json";
         private const string TestCode = @"
 namespace NamespaceName
 {
 }
 ";
 
-        private Project originalProject;
         private bool createSettingsFile;
 
         /// <summary>
@@ -69,6 +70,17 @@ namespace NamespaceName
         }
 
         /// <inheritdoc/>
+        protected override string GetSettings()
+        {
+            if (this.createSettingsFile)
+            {
+                return "{}";
+            }
+
+            return null;
+        }
+
+        /// <inheritdoc/>
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()
         {
             yield return new FileHeaderAnalyzers();
@@ -78,18 +90,6 @@ namespace NamespaceName
         protected override CodeFixProvider GetCSharpCodeFixProvider()
         {
             return new SettingsFileCodeFixProvider();
-        }
-
-        /// <inheritdoc/>
-        protected override Project CreateProject(string[] sources, string language = LanguageNames.CSharp, string[] filenames = null)
-        {
-            this.originalProject = base.CreateProject(sources, language, filenames);
-            if (this.createSettingsFile)
-            {
-                this.originalProject = this.originalProject.AddAdditionalDocument(StyleCopSettingsFileName, string.Empty).Project;
-            }
-
-            return this.originalProject;
         }
     }
 }

@@ -120,11 +120,59 @@
   <data name="InheritdocCodeFix" xml:space="preserve">
     <value>Inherit documentation</value>
   </data>
+  <data name="PropertySummaryStartTextCodeFix" xml:space="preserve">
+    <value>Add standard text</value>
+  </data>
   <data name="SA1609SA1610CodeFix" xml:space="preserve">
     <value>Document value from summary</value>
   </data>
+  <data name="SA1611Description" xml:space="preserve">
+    <value>A C# method, constructor, delegate or indexer element is missing documentation for one or more of its parameters.</value>
+  </data>
+  <data name="SA1611MessageFormat" xml:space="preserve">
+    <value>The documentation for parameter '{0}' is missing</value>
+  </data>
+  <data name="SA1611Title" xml:space="preserve">
+    <value>Element parameters must be documented</value>
+  </data>
+  <data name="SA1615SA1616CodeFix" xml:space="preserve">
+    <value>Document return value</value>
+  </data>
   <data name="SA1617CodeFix" xml:space="preserve">
     <value>Remove &lt;returns&gt; XML comment</value>
+  </data>
+  <data name="SA1623Description" xml:space="preserve">
+    <value>The documentation text within a C# property’s &lt;summary&gt; tag does not match the accessors within the property.</value>
+  </data>
+  <data name="SA1623MessageFormat" xml:space="preserve">
+    <value>The property's documentation summary text must begin with: '{0}'</value>
+  </data>
+  <data name="SA1623Title" xml:space="preserve">
+    <value>Property summary documentation must match accessors</value>
+  </data>
+  <data name="SA1624Description" xml:space="preserve">
+    <value>The documentation text within a C# property’s &lt;summary&gt; tag takes into account all of the accessors within the property, but one of the accessors has limited access.</value>
+  </data>
+  <data name="SA1624MessageFormat" xml:space="preserve">
+    <value>Because the property only contains a visible {0} accessor, the documentation summary text must begin with '{1}'.</value>
+  </data>
+  <data name="SA1624Title" xml:space="preserve">
+    <value>Property summary documentation must omit accessor with restricted access</value>
+  </data>
+  <data name="SA1626CodeFix" xml:space="preserve">
+    <value>Convert to line comment</value>
+  </data>
+  <data name="SA1627Description" xml:space="preserve">
+    <value>The XML header documentation for a C# code element contains an empty tag.</value>
+  </data>
+  <data name="SA1627MessageFormat" xml:space="preserve">
+    <value>The documentation text within the \'{0}\' tag must not be empty.</value>
+  </data>
+  <data name="SA1627Title" xml:space="preserve">
+    <value>Documentation text must not be empty</value>
+  </data>
+  <data name="SA1633CodeFix" xml:space="preserve">
+    <value>Add file header</value>
   </data>
   <data name="SA1633Description" xml:space="preserve">
     <value>A C# code file is missing a standard file header.</value>
@@ -213,16 +261,46 @@
   <data name="SA1642SA1643CodeFix" xml:space="preserve">
     <value>Add standard text</value>
   </data>
+  <data name="SA1648Description" xml:space="preserve">
+    <value>&lt;inheritdoc&gt; has been used on an element that doesn't inherit from a base class or implement an interface.</value>
+  </data>
+  <data name="SA1648MessageFormat" xml:space="preserve">
+    <value>inheritdoc must be used with inheriting class</value>
+  </data>
+  <data name="SA1648Title" xml:space="preserve">
+    <value>inheritdoc must be used with inheriting class</value>
+  </data>
+  <data name="SA1649CodeFix" xml:space="preserve">
+    <value>Rename file to match first type name</value>
+  </data>
+  <data name="SA1649Description" xml:space="preserve">
+    <value>The file name of a C# code file does not match the first type declared in the file.</value>
+  </data>
+  <data name="SA1649MessageFormat" xml:space="preserve">
+    <value>File name must match first type name.</value>
+  </data>
+  <data name="SA1649Title" xml:space="preserve">
+    <value>File name must match first type name</value>
+  </data>
   <data name="SA1651CodeFix" xml:space="preserve">
     <value>Finalize placeholder text</value>
   </data>
-  <data name="SA1652Description" xml:space="preserve">
-    <value>The project is currently configured to not parse XML documentation comments; all diagnostics for documentation comments are disabled. Enable XML documentation output to enable these diagnostics.</value>
+  <data name="StartingTextGets" xml:space="preserve">
+    <value>Gets</value>
   </data>
-  <data name="SA1652MessageFormat" xml:space="preserve">
-    <value>Enable XML documentation output</value>
+  <data name="StartingTextGetsOrSets" xml:space="preserve">
+    <value>Gets or sets</value>
   </data>
-  <data name="SA1652Title" xml:space="preserve">
-    <value>Enable XML documentation output</value>
+  <data name="StartingTextGetsOrSetsWhether" xml:space="preserve">
+    <value>Gets or sets a value indicating whether</value>
+  </data>
+  <data name="StartingTextGetsWhether" xml:space="preserve">
+    <value>Gets a value indicating whether</value>
+  </data>
+  <data name="StartingTextSets" xml:space="preserve">
+    <value>Sets</value>
+  </data>
+  <data name="StartingTextSetsWhether" xml:space="preserve">
+    <value>Sets a value indicating whether</value>
   </data>
 </root>

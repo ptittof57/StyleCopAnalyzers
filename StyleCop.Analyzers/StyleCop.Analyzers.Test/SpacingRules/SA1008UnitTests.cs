@@ -1,8 +1,12 @@
-﻿namespace StyleCop.Analyzers.Test.SpacingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.SpacingRules
 {
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CodeFixes;
     using Microsoft.CodeAnalysis.Diagnostics;
     using StyleCop.Analyzers.SpacingRules;
@@ -301,6 +305,65 @@
         }
 
         /// <summary>
+        /// Verifies that spacing for await expressions is handled properly.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestAwaitExpressionAsync()
+        {
+            var testCode = @"namespace TestNamespace
+{
+    using System.Threading.Tasks;
+
+    public class TestClass
+    {
+        public async Task TestMethod1()
+        {
+            await( Task.Delay(1000));
+        }
+
+        public async Task TestMethod2()
+        {
+            await ( Task.Delay(1000));
+        }
+    }
+}
+";
+
+            var fixedTestCode = @"namespace TestNamespace
+{
+    using System.Threading.Tasks;
+
+    public class TestClass
+    {
+        public async Task TestMethod1()
+        {
+            await(Task.Delay(1000));
+        }
+
+        public async Task TestMethod2()
+        {
+            await (Task.Delay(1000));
+        }
+    }
+}
+";
+
+            DiagnosticResult[] expectedDiagnostics =
+            {
+                // v1
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(9, 18),
+
+                // v2
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(14, 19)
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expectedDiagnostics, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedTestCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedTestCode).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Verifies that spacing for checked / unchecked expressions is handled properly.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
@@ -313,10 +376,10 @@
     {
         public void TestMethod()
         {
-            var v1 = checked (1 + 2);
+            var v1 = checked ( 1 + 2);
             var v2 = checked( 1 + 2);
 
-            var v3 = unchecked (1 + 2);
+            var v3 = unchecked ( 1 + 2);
             var v4 = unchecked( 1 + 2);
         }
     }
@@ -329,10 +392,10 @@
     {
         public void TestMethod()
         {
-            var v1 = checked(1 + 2);
+            var v1 = checked (1 + 2);
             var v2 = checked(1 + 2);
 
-            var v3 = unchecked(1 + 2);
+            var v3 = unchecked (1 + 2);
             var v4 = unchecked(1 + 2);
         }
     }
@@ -342,13 +405,13 @@
             DiagnosticResult[] expectedDiagnostics =
             {
                 // v1
-                this.CSharpDiagnostic(DescriptorNotPreceded).WithLocation(7, 30),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(7, 30),
 
                 // v2
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(8, 29),
 
                 // v3
-                this.CSharpDiagnostic(DescriptorNotPreceded).WithLocation(10, 32),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(10, 32),
 
                 // v4
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(11, 31)
@@ -372,7 +435,7 @@
     {
         public void TestMethod<T>()
         {
-            var v1 = default (T);
+            var v1 = default ( T);
             var v2 = default( T);
         }
     }
@@ -385,7 +448,7 @@
     {
         public void TestMethod<T>()
         {
-            var v1 = default(T);
+            var v1 = default (T);
             var v2 = default(T);
         }
     }
@@ -395,10 +458,142 @@
             DiagnosticResult[] expectedDiagnostics =
             {
                 // v1
-                this.CSharpDiagnostic(DescriptorNotPreceded).WithLocation(7, 30),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(7, 30),
 
                 // v2
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(8, 29)
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expectedDiagnostics, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedTestCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedTestCode).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that spacing for query expressions is handled properly.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestQueryExpressionAsync()
+        {
+            var testCode = @"namespace TestNamespace
+{
+    using System.Linq;
+
+    public class TestClass
+    {
+        private int[] testList = { 1, 2, 3 };
+
+        public void TestMethod()
+        {
+            var testResult1 =
+                from x in( testList)
+                where( x > 0)
+                select( x);
+
+            var testResult2 =
+                from x in ( testList)
+                where ( x > 0)
+                select ( x);
+        }
+    }
+}
+";
+
+            var fixedTestCode = @"namespace TestNamespace
+{
+    using System.Linq;
+
+    public class TestClass
+    {
+        private int[] testList = { 1, 2, 3 };
+
+        public void TestMethod()
+        {
+            var testResult1 =
+                from x in(testList)
+                where(x > 0)
+                select(x);
+
+            var testResult2 =
+                from x in (testList)
+                where (x > 0)
+                select (x);
+        }
+    }
+}
+";
+
+            DiagnosticResult[] expectedDiagnostics =
+            {
+                // 1st query expression
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(12, 26),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(13, 22),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(14, 23),
+
+                // 2nd query expression
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(17, 27),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(18, 23),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(19, 24),
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expectedDiagnostics, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedTestCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedTestCode).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that spacing for throw expressions is handled properly.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestThrowExpressionAsync()
+        {
+            var testCode = @"namespace TestNamespace
+{
+    using System;
+
+    public class TestClass
+    {
+        public void TestMethod1()
+        {
+            throw( new Exception());
+        }
+
+        public void TestMethod2()
+        {
+            throw ( new Exception());
+        }
+    }
+}
+";
+
+            var fixedTestCode = @"namespace TestNamespace
+{
+    using System;
+
+    public class TestClass
+    {
+        public void TestMethod1()
+        {
+            throw(new Exception());
+        }
+
+        public void TestMethod2()
+        {
+            throw (new Exception());
+        }
+    }
+}
+";
+
+            DiagnosticResult[] expectedDiagnostics =
+            {
+                // v1
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(9, 18),
+
+                // v2
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(14, 19)
             };
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expectedDiagnostics, CancellationToken.None).ConfigureAwait(false);
@@ -419,7 +614,7 @@
     {
         public void TestMethod()
         {
-            var v1 = typeof (int);
+            var v1 = typeof ( int);
             var v2 = typeof( int);
         }
     }
@@ -432,7 +627,7 @@
     {
         public void TestMethod()
         {
-            var v1 = typeof(int);
+            var v1 = typeof (int);
             var v2 = typeof(int);
         }
     }
@@ -442,7 +637,7 @@
             DiagnosticResult[] expectedDiagnostics =
             {
                 // v1
-                this.CSharpDiagnostic(DescriptorNotPreceded).WithLocation(7, 29),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(7, 29),
 
                 // v2
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(8, 28)
@@ -466,7 +661,7 @@
     {
         public void TestMethod()
         {
-            var v1 = sizeof (int);
+            var v1 = sizeof ( int);
             var v2 = sizeof( int);
         }
     }
@@ -479,7 +674,7 @@
     {
         public void TestMethod()
         {
-            var v1 = sizeof(int);
+            var v1 = sizeof (int);
             var v2 = sizeof(int);
         }
     }
@@ -489,7 +684,7 @@
             DiagnosticResult[] expectedDiagnostics =
             {
                 // v1
-                this.CSharpDiagnostic(DescriptorNotPreceded).WithLocation(7, 29),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(7, 29),
 
                 // v2
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(8, 28)
@@ -625,7 +820,7 @@
         {
             var i = 0;
 
-            while(i < 100)
+            while( i < 100)
             {
                 i++;
             }
@@ -652,7 +847,7 @@
         {
             var i = 0;
 
-            while (i < 100)
+            while(i < 100)
             {
                 i++;
             }
@@ -674,7 +869,7 @@
             DiagnosticResult[] expectedDiagnostics =
             {
                 // 1st while statement
-                this.CSharpDiagnostic(DescriptorPreceded).WithLocation(9, 18),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(9, 18),
 
                 // 2nd while statement
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(14, 19),
@@ -708,7 +903,7 @@
             {
                 i++;
             }
-            while(i < 100);
+            while( i < 100);
 
             do
             {
@@ -738,7 +933,7 @@
             {
                 i++;
             }
-            while (i < 100);
+            while(i < 100);
 
             do
             {
@@ -759,7 +954,7 @@
             DiagnosticResult[] expectedDiagnostics =
             {
                 // 1st do statement
-                this.CSharpDiagnostic(DescriptorPreceded).WithLocation(13, 18),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(13, 18),
 
                 // 2nd do statement
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(19, 19),
@@ -787,7 +982,7 @@
     {
         public void TestMethod()
         {
-            for(var i = 0; i < 9; i++)
+            for( var i = 0; i < 9; i++)
             {
             }
 
@@ -809,7 +1004,7 @@
     {
         public void TestMethod()
         {
-            for (var i = 0; i < 9; i++)
+            for(var i = 0; i < 9; i++)
             {
             }
 
@@ -828,7 +1023,7 @@
             DiagnosticResult[] expectedDiagnostics =
             {
                 // 1st for statement
-                this.CSharpDiagnostic(DescriptorPreceded).WithLocation(7, 16),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(7, 16),
 
                 // 2nd for statement
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(11, 17),
@@ -859,7 +1054,7 @@
 
         public void TestMethod()
         {
-            foreach(var i in testList)
+            foreach( var i in testList)
             {
             }
 
@@ -867,7 +1062,7 @@
             {
             }
 
-            foreach (var i in(IEnumerable)testList)
+            foreach (var i in( IEnumerable)testList)
             {
             }
         }
@@ -885,7 +1080,7 @@
 
         public void TestMethod()
         {
-            foreach (var i in testList)
+            foreach(var i in testList)
             {
             }
 
@@ -893,7 +1088,7 @@
             {
             }
 
-            foreach (var i in (IEnumerable)testList)
+            foreach (var i in(IEnumerable)testList)
             {
             }
         }
@@ -904,13 +1099,68 @@
             DiagnosticResult[] expectedDiagnostics =
             {
                 // 1st foreach statement
-                this.CSharpDiagnostic(DescriptorPreceded).WithLocation(11, 20),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(11, 20),
 
                 // 2nd foreach statement
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(15, 21),
 
                 // 3rd foreach statement
-                this.CSharpDiagnostic(DescriptorPreceded).WithLocation(19, 30)
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(19, 30)
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expectedDiagnostics, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedTestCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedTestCode).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that spacing for return statements is handled properly.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestReturnStatementAsync()
+        {
+            var testCode = @"namespace TestNamespace
+{
+    public class TestClass
+    {
+        public int TestMethod1()
+        {
+            return( 0);
+        }
+
+        public int TestMethod2()
+        {
+            return ( 0);
+        }
+    }
+}
+";
+
+            var fixedTestCode = @"namespace TestNamespace
+{
+    public class TestClass
+    {
+        public int TestMethod1()
+        {
+            return(0);
+        }
+
+        public int TestMethod2()
+        {
+            return (0);
+        }
+    }
+}
+";
+
+            DiagnosticResult[] expectedDiagnostics =
+            {
+                // v1
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(7, 19),
+
+                // v2
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(12, 20)
             };
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expectedDiagnostics, CancellationToken.None).ConfigureAwait(false);
@@ -933,7 +1183,7 @@
     {
         public void TestMethod(Stream s1, Stream s2)
         {
-            using(s1)
+            using( s1)
             {
                 s1.Flush();
             }
@@ -955,7 +1205,7 @@
     {
         public void TestMethod(Stream s1, Stream s2)
         {
-            using (s1)
+            using(s1)
             {
                 s1.Flush();
             }
@@ -972,7 +1222,7 @@
             DiagnosticResult[] expectedDiagnostics =
             {
                 // 1st using statement
-                this.CSharpDiagnostic(DescriptorPreceded).WithLocation(9, 18),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(9, 18),
 
                 // 2nd using statement
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(14, 19)
@@ -1004,7 +1254,7 @@
         {
             unsafe
             {
-                fixed(int* p = &x.A)
+                fixed( int* p = &x.A)
                 {
                     *p = 1;
                 }
@@ -1034,7 +1284,7 @@
         {
             unsafe
             {
-                fixed (int* p = &x.A)
+                fixed(int* p = &x.A)
                 {
                     *p = 1;
                 }
@@ -1053,7 +1303,7 @@
             DiagnosticResult[] expectedDiagnostics =
             {
                 // 1st using statement
-                this.CSharpDiagnostic(DescriptorPreceded).WithLocation(15, 22),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(15, 22),
 
                 // 2nd using statement
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(20, 23),
@@ -1080,7 +1330,7 @@
 
         public void TestMethod()
         {
-            lock(this)
+            lock( this)
             {
                 this.testField = 1;
             }
@@ -1102,7 +1352,7 @@
 
         public void TestMethod()
         {
-            lock (this)
+            lock(this)
             {
                 this.testField = 1;
             }
@@ -1119,7 +1369,7 @@
             DiagnosticResult[] expectedDiagnostics =
             {
                 // 1st using statement
-                this.CSharpDiagnostic(DescriptorPreceded).WithLocation(9, 17),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(9, 17),
 
                 // 2nd using statement
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(14, 18)
@@ -1143,7 +1393,7 @@
     {
         public void TestMethod(int x, int y)
         {
-            if(x > 0)
+            if( x > 0)
             {
                 return;
             }
@@ -1168,7 +1418,7 @@
     {
         public void TestMethod(int x, int y)
         {
-            if (x > 0)
+            if(x > 0)
             {
                 return;
             }
@@ -1190,7 +1440,7 @@
             DiagnosticResult[] expectedDiagnostics =
             {
                 // 1st if statement
-                this.CSharpDiagnostic(DescriptorPreceded).WithLocation(7, 15),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(7, 15),
 
                 // 2nd if statement
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(12, 16),
@@ -1204,7 +1454,7 @@
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expectedDiagnostics, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpDiagnosticAsync(fixedTestCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
-            await this.VerifyCSharpFixAsync(testCode, fixedTestCode).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedTestCode, numberOfFixAllIterations: 2, cancellationToken: CancellationToken.None).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -1220,16 +1470,18 @@
     {
         public void TestMethod(int x)
         {
-            switch(x)
+            switch( x)
             {
-                default:
-                    return;
+            case( 0):
+            default:
+                return;
             }
 
             switch ( x)
             {
-                default:
-                    return;
+            case ( 0):
+            default:
+                return;
             }
         }
     }
@@ -1242,16 +1494,18 @@
     {
         public void TestMethod(int x)
         {
-            switch (x)
+            switch(x)
             {
-                default:
-                    return;
+            case(0):
+            default:
+                return;
             }
 
             switch (x)
             {
-                default:
-                    return;
+            case (0):
+            default:
+                return;
             }
         }
     }
@@ -1261,10 +1515,12 @@
             DiagnosticResult[] expectedDiagnostics =
             {
                 // 1st switch statement
-                this.CSharpDiagnostic(DescriptorPreceded).WithLocation(7, 19),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(7, 19),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(9, 17),
 
                 // 2nd switch statement
-                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(13, 20)
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(14, 20),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(16, 18),
             };
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expectedDiagnostics, CancellationToken.None).ConfigureAwait(false);
@@ -1290,7 +1546,7 @@
             try
             {
             }
-            catch(InvalidOperationException)
+            catch( InvalidOperationException)
             {
             }
             catch ( ArgumentNullException)
@@ -1318,7 +1574,7 @@
             try
             {
             }
-            catch (InvalidOperationException)
+            catch(InvalidOperationException)
             {
             }
             catch (ArgumentNullException)
@@ -1338,7 +1594,7 @@
             DiagnosticResult[] expectedDiagnostics =
             {
                 // 1st catch clause
-                this.CSharpDiagnostic(DescriptorPreceded).WithLocation(12, 18),
+                this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(12, 18),
 
                 // 1st catch clause
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(15, 19),
@@ -1388,7 +1644,7 @@
 {
     public class TestClass
     {
-        public T TestMethod1<T>() where T : new()
+        public T TestMethod1<T>() where T : new ()
         {
             return default(T);
         }
@@ -1398,7 +1654,7 @@
             return default(T);
         }
 
-        public T TestMethod3<T>() where T : new()
+        public T TestMethod3<T>() where T : new ()
         {
             return default(T);
         }
@@ -1408,14 +1664,10 @@
 
             DiagnosticResult[] expectedDiagnostics =
             {
-                // 1st constructor constraint
-                this.CSharpDiagnostic(DescriptorNotPreceded).WithLocation(5, 49),
-
                 // 2nd constructor constraint
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(10, 48),
 
                 // 3rd constructor constraint
-                this.CSharpDiagnostic(DescriptorNotPreceded).WithLocation(15, 49),
                 this.CSharpDiagnostic(DescriptorNotFollowed).WithLocation(15, 49)
             };
 
@@ -1652,6 +1904,140 @@
             await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Verifies that interpolations are handled properly.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestInterpolationCorrectSpacingAsync()
+        {
+            var testCode = @"namespace TestNamespace
+{
+    using System;
+
+    public class TestClass
+    {
+        public void TestMethod()
+        {
+            string fileName = ""Foo"";
+            var FileContainer = new { HasContentChanged = true };
+            var fileTitle = $""{fileName}{(FileContainer.HasContentChanged ? ""*"" : String.Empty)}"";
+        }
+    }
+}";
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that interpolations are handled properly.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestInterpolationWrongSpacingAsync()
+        {
+            var testCode = @"namespace TestNamespace
+{
+    using System;
+
+    public class TestClass
+    {
+        public void TestMethod()
+        {
+            string fileName = ""Foo"";
+            var FileContainer = new { HasContentChanged = true };
+            var fileTitle = $""{fileName}{ (FileContainer.HasContentChanged ? ""*"" : String.Empty)}"";
+        }
+    }
+}";
+
+            var fixedTestCode = @"namespace TestNamespace
+{
+    using System;
+
+    public class TestClass
+    {
+        public void TestMethod()
+        {
+            string fileName = ""Foo"";
+            var FileContainer = new { HasContentChanged = true };
+            var fileTitle = $""{fileName}{(FileContainer.HasContentChanged ? ""*"" : String.Empty)}"";
+        }
+    }
+}";
+
+            DiagnosticResult[] expectedDiagnostics =
+            {
+                this.CSharpDiagnostic(DescriptorNotPreceded).WithLocation(11, 43)
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expectedDiagnostics, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedTestCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedTestCode).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// This is a regression test for DotNetAnalyzers/StyleCopAnalyzers#1585:
+        /// https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/1585
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestCrefAttributeAsync()
+        {
+            var testCode = @"
+public class TestClass
+{
+    /// <see cref=""Method ()""/>
+    public void Method()
+    {
+    }
+}
+";
+
+            var fixedCode = @"
+public class TestClass
+{
+    /// <see cref=""Method()""/>
+    public void Method()
+    {
+    }
+}
+";
+
+            var expected = this.CSharpDiagnostic().WithLocation(4, 27).WithArguments(" not", "preceded");
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestMissingTokenAsync()
+        {
+            string testCode = @"
+class ClassName
+{
+    ClassName()
+        : base)
+    {
+    }
+}
+";
+
+            DiagnosticResult[] expected =
+            {
+                new DiagnosticResult
+                {
+                    Id = "CS1003",
+                    Severity = DiagnosticSeverity.Error,
+                    Message = "Syntax error, '(' expected",
+                    Locations = new[] { new DiagnosticResultLocation("Test0.cs", 5, 15) }
+                }
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+        }
+
         /// <inheritdoc/>
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()
         {
@@ -1660,7 +2046,7 @@
 
         protected override CodeFixProvider GetCSharpCodeFixProvider()
         {
-            return new OpenCloseSpacingCodeFixProvider();
+            return new TokenSpacingCodeFixProvider();
         }
     }
 }

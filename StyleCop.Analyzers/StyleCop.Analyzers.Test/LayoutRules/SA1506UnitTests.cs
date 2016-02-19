@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.LayoutRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.LayoutRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -569,9 +572,14 @@ public class TestClass
     public void TestMethod1() { }
 
     /// <summary>more documentation.</summary>
-    
+
     /* another comment */
     public void TestMethod2() { }
+
+    /// <summary>more documentation.</summary>
+    // another comment (a specific regression test for https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/1456)
+
+    public void TestMethod3() { }
 }
 ";
 
@@ -589,6 +597,10 @@ public class TestClass
     /// <summary>more documentation.</summary>
     /* another comment */
     public void TestMethod2() { }
+
+    /// <summary>more documentation.</summary>
+    // another comment (a specific regression test for https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/1456)
+    public void TestMethod3() { }
 }
 ";
 
@@ -597,11 +609,218 @@ public class TestClass
                 this.CSharpDiagnostic().WithLocation(3, 1),
                 this.CSharpDiagnostic().WithLocation(10, 1),
                 this.CSharpDiagnostic().WithLocation(15, 1),
+                this.CSharpDiagnostic().WithLocation(20, 1),
             };
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that enum member declarations with valid (or no) documentation will not produce diagnostics.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestValidEnumMemberDeclarationsAsync()
+        {
+            var testCode = @"namespace TestNamespace
+{
+    public enum TestEnum
+    {
+        /// <summary>
+        /// This is an enum member.
+        /// </summary>
+        Foo = 0,
+        Bar = 1
+    }
+}
+";
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that enum member declarations with invalid documentation will produce the expected diagnostics.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestInvalidEnumMemberDeclarationsAsync()
+        {
+            var testCode = @"namespace TestNamespace
+{
+    public enum TestEnum
+    {
+        /// <summary>
+        /// This is an enum member.
+        /// </summary>
+
+        Foo = 0
+    }
+}
+";
+
+            var fixedTestCode = @"namespace TestNamespace
+{
+    public enum TestEnum
+    {
+        /// <summary>
+        /// This is an enum member.
+        /// </summary>
+        Foo = 0
+    }
+}
+";
+
+            var expectedDiagnostic = this.CSharpDiagnostic().WithLocation(8, 1);
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expectedDiagnostic, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedTestCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedTestCode).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that operator declarations with valid (or no) documentation will not produce diagnostics.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestValidOperatorDeclarationsAsync()
+        {
+            var testCode = @"namespace TestNamespace
+{
+    public struct Foo
+    {
+        /// <summary>
+        /// This is an operator declaration.
+        /// </summary>
+        public static Foo operator +(Foo x, Foo y)
+        {
+            return new Foo();
+        }
+
+        private int testField1;
+    }
+}
+";
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that operator declarations with invalid documentation will produce the expected diagnostics.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestInvalidOperatorDeclarationsAsync()
+        {
+            var testCode = @"namespace TestNamespace
+{
+    public struct Foo
+    {
+        /// <summary>
+        /// This is an operator declaration.
+        /// </summary>
+
+        public static Foo operator +(Foo x, Foo y)
+        {
+            return new Foo();
+        }
+    }
+}
+";
+
+            var fixedTestCode = @"namespace TestNamespace
+{
+    public struct Foo
+    {
+        /// <summary>
+        /// This is an operator declaration.
+        /// </summary>
+        public static Foo operator +(Foo x, Foo y)
+        {
+            return new Foo();
+        }
+    }
+}
+";
+
+            var expectedDiagnostic = this.CSharpDiagnostic().WithLocation(8, 1);
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expectedDiagnostic, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedTestCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedTestCode).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that conversion operator declarations with valid (or no) documentation will not produce diagnostics.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestValidConversionOperatorDeclarationsAsync()
+        {
+            var testCode = @"namespace TestNamespace
+{
+    public struct Foo
+    {
+        /// <summary>
+        /// This is a conversion operator declaration.
+        /// </summary>
+        public static explicit operator Foo(string s)
+        {
+            return new Foo();
+        }
+
+        private int testField1;
+    }
+}
+";
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that conversion operator declarations with invalid documentation will produce the expected diagnostics.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestInvalidConversionOperatorDeclarationsAsync()
+        {
+            var testCode = @"namespace TestNamespace
+{
+    public struct Foo
+    {
+        /// <summary>
+        /// This is a conversion operator declaration.
+        /// </summary>
+
+        public static explicit operator Foo(string s)
+        {
+            return new Foo();
+        }
+    }
+}
+";
+
+            var fixedTestCode = @"namespace TestNamespace
+{
+    public struct Foo
+    {
+        /// <summary>
+        /// This is a conversion operator declaration.
+        /// </summary>
+        public static explicit operator Foo(string s)
+        {
+            return new Foo();
+        }
+    }
+}
+";
+
+            var expectedDiagnostic = this.CSharpDiagnostic().WithLocation(8, 1);
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expectedDiagnostic, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedTestCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedTestCode).ConfigureAwait(false);
         }
 
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()

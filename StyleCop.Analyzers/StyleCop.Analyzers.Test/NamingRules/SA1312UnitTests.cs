@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.NamingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.NamingRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -145,12 +148,19 @@ public class TypeName
     }
 }";
 
+            var fixedTestCode = @"public class TypeName
+{
+    public void MethodName()
+    {
+        string bar = ""baz"";
+    }
+}";
+
             DiagnosticResult expected = this.CSharpDiagnostic().WithArguments("_bar").WithLocation(5, 16);
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
-
-            // Verify the code fix doesn't do anything in this case
-            await this.VerifyCSharpFixAsync(testCode, testCode).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedTestCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedTestCode).ConfigureAwait(false);
         }
 
         [Fact]
@@ -168,6 +178,268 @@ public class TypeName
         }
 
         [Fact]
+        public async Task TestVariableInCatchDeclarationAsync()
+        {
+            var testCode = @"
+using System;
+public class TypeName
+{
+    public void MethodName()
+    {
+        try
+        {
+        }
+        catch (Exception Ex)
+        {
+        }
+    }
+}";
+            var fixedCode = @"
+using System;
+public class TypeName
+{
+    public void MethodName()
+    {
+        try
+        {
+        }
+        catch (Exception ex)
+        {
+        }
+    }
+}";
+
+            DiagnosticResult[] expected =
+            {
+                this.CSharpDiagnostic().WithArguments("Ex").WithLocation(10, 26),
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestVariableInForEachStatementAsync()
+        {
+            var testCode = @"public class TypeName
+{
+    public void MethodName()
+    {
+        foreach (var X in new int[0])
+        {
+        }
+    }
+}";
+            var fixedCode = @"public class TypeName
+{
+    public void MethodName()
+    {
+        foreach (var x in new int[0])
+        {
+        }
+    }
+}";
+
+            DiagnosticResult[] expected =
+            {
+                this.CSharpDiagnostic().WithArguments("X").WithLocation(5, 22),
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestVariableInFromClauseAsync()
+        {
+            var testCode = @"
+using System.Linq;
+public class TypeName
+{
+    public void MethodName()
+    {
+        var result =
+            from X in new int[0]
+            select X;
+    }
+}";
+            var fixedCode = @"
+using System.Linq;
+public class TypeName
+{
+    public void MethodName()
+    {
+        var result =
+            from x in new int[0]
+            select x;
+    }
+}";
+
+            DiagnosticResult[] expected =
+            {
+                this.CSharpDiagnostic().WithArguments("X").WithLocation(8, 18),
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestVariableInQueryContinuationAsync()
+        {
+            var testCode = @"
+using System.Linq;
+public class TypeName
+{
+    public void MethodName()
+    {
+        var result =
+            from x in new int[0]
+            select x into Y
+            select Y;
+    }
+}";
+            var fixedCode = @"
+using System.Linq;
+public class TypeName
+{
+    public void MethodName()
+    {
+        var result =
+            from x in new int[0]
+            select x into y
+            select y;
+    }
+}";
+
+            DiagnosticResult[] expected =
+            {
+                this.CSharpDiagnostic().WithArguments("Y").WithLocation(9, 27),
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestVariableInLetClauseAsync()
+        {
+            var testCode = @"
+using System.Linq;
+public class TypeName
+{
+    public void MethodName()
+    {
+        var result =
+            from x in new int[0]
+            let Y = x
+            select Y;
+    }
+}";
+            var fixedCode = @"
+using System.Linq;
+public class TypeName
+{
+    public void MethodName()
+    {
+        var result =
+            from x in new int[0]
+            let y = x
+            select y;
+    }
+}";
+
+            DiagnosticResult[] expected =
+            {
+                this.CSharpDiagnostic().WithArguments("Y").WithLocation(9, 17),
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestVariableInJoinClauseAsync()
+        {
+            var testCode = @"
+using System.Linq;
+public class TypeName
+{
+    public void MethodName()
+    {
+        var result =
+            from x in new int[0]
+            join Y in new int[0] on x equals Y
+            select x;
+    }
+}";
+            var fixedCode = @"
+using System.Linq;
+public class TypeName
+{
+    public void MethodName()
+    {
+        var result =
+            from x in new int[0]
+            join y in new int[0] on x equals y
+            select x;
+    }
+}";
+
+            DiagnosticResult[] expected =
+            {
+                this.CSharpDiagnostic().WithArguments("Y").WithLocation(9, 18),
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestVariableInJoinIntoClauseAsync()
+        {
+            var testCode = @"
+using System.Linq;
+public class TypeName
+{
+    public void MethodName()
+    {
+        var result =
+            from x in new int[0]
+            join y in new int[0] on x equals y into Z
+            select Z;
+    }
+}";
+            var fixedCode = @"
+using System.Linq;
+public class TypeName
+{
+    public void MethodName()
+    {
+        var result =
+            from x in new int[0]
+            join y in new int[0] on x equals y into z
+            select z;
+    }
+}";
+
+            DiagnosticResult[] expected =
+            {
+                this.CSharpDiagnostic().WithArguments("Z").WithLocation(9, 53),
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
+        }
+
+        [Fact]
         public async Task TestVariablePlacedInsideNativeMethodsClassAsync()
         {
             var testCode = @"public class FooNativeMethods
@@ -181,7 +453,7 @@ public class TypeName
             await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }
 
-        [Fact(Skip = "https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/1315")]
+        [Fact]
         public async Task TestRenameConflictsWithVariableAsync()
         {
             var testCode = @"public class TypeName
@@ -193,7 +465,7 @@ public class TypeName
     }
 }";
 
-            DiagnosticResult expected = this.CSharpDiagnostic().WithArguments("Variable").WithLocation(5, 16);
+            DiagnosticResult expected = this.CSharpDiagnostic().WithArguments("Variable").WithLocation(6, 16);
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
 
@@ -202,7 +474,7 @@ public class TypeName
     public void MethodName()
     {
         string variable = ""Text"";
-        string variableValue = variable.ToString();
+        string variable1 = variable.ToString();
     }
 }";
 
@@ -237,7 +509,7 @@ public class TypeName
             await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
         }
 
-        [Fact(Skip = "https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/1315")]
+        [Fact]
         public async Task TestRenameConflictsWithParameterAsync()
         {
             var testCode = @"public class TypeName
@@ -256,12 +528,34 @@ public class TypeName
 {
     public void MethodName(int parameter)
     {
-        string parameterValue = parameter.ToString();
+        string parameter1 = parameter.ToString();
     }
 }";
 
             await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestUnderscoreOnlyNamesDoNotTriggerCodeFixAsync()
+        {
+            var testCode = @"public class TypeName
+{
+    public void MethodName(int parameter)
+    {
+        string _ = parameter.ToString();
+        string __ = parameter.ToString();
+    }
+}";
+
+            DiagnosticResult[] expected =
+            {
+                this.CSharpDiagnostic().WithArguments("_").WithLocation(5, 16),
+                this.CSharpDiagnostic().WithArguments("__").WithLocation(6, 16)
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, testCode).ConfigureAwait(false);
         }
 
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()

@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.ReadabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.ReadabilityRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -88,6 +91,31 @@ class Foo
         }
 
         [Fact]
+        public async Task TestMethodCallWithThreeParametersSecondSpansMultipleLinesThirdSpansMultipleLinesButIsInvocationExpressionAsync()
+        {
+            var testCode = @"
+class Foo
+{
+    public void Fun(int i, int j, int k)
+    {
+    }
+
+    public void Bar()
+    {
+        Fun(1,
+            System.Linq.Enumerable.Count(
+                new int[0]) + 4,
+            System.Linq.Enumerable.Count(
+                new int[0]));
+    }
+}";
+
+            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(11, 13);
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        [Fact]
         public async Task TestMethodCallWithTwoParametersFirstIsMultilineSecondIsOneLineAsync()
         {
             var testCode = @"
@@ -151,6 +179,31 @@ class Foo
 }";
 
             await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestAnonymousMethodCallSecondParameterSpansMultipleLinesThirdParameterIsInvocationAsync()
+        {
+            var testCode = @"
+class Foo
+{
+    public void Bar()
+    {
+        System.Action<int, int, int> d = delegate(int i, int j, int k)
+                                    {
+
+                                    };
+        d(1,
+          System.Linq.Enumerable.Count(
+                new int[0]) + 1,
+          System.Linq.Enumerable.Count(
+                new int[0]));
+    }
+}";
+
+            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(11, 11);
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
         }
 
         [Fact]

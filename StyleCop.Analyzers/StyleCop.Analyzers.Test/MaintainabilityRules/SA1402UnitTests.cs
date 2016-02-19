@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.MaintainabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.MaintainabilityRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -51,6 +54,27 @@ public partial class Bar
 ";
 
             DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(4, 22);
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestPreferFilenameClassAsync()
+        {
+            var testCode = @"public class Foo
+{
+}
+public class Test0
+{
+}";
+
+            var fixedCode = @"public class Test0
+{
+}";
+
+            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(1, 14);
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);

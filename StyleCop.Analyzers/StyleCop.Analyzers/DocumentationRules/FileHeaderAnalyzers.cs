@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.DocumentationRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.DocumentationRules
 {
     using System;
     using System.Collections.Immutable;
@@ -21,9 +24,8 @@
     /// <seealso href="https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1639.md">SA1639 File header must have summary</seealso>
     /// <seealso href="https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1640.md">SA1640 File header must have valid company text</seealso>
     /// <seealso href="https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1641.md">SA1641 File header company name text must match</seealso>
-    /// <seealso href="https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1649.md">SA1649 File header file name documentation must match type name</seealso>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class FileHeaderAnalyzers : DiagnosticAnalyzer
+    internal class FileHeaderAnalyzers : DiagnosticAnalyzer
     {
         private const string SA1633Identifier = "SA1633";
         private const string SA1634Identifier = "SA1634";
@@ -80,6 +82,8 @@
         private static readonly LocalizableString SA1641MessageFormat = new LocalizableResourceString(nameof(DocumentationResources.SA1641MessageFormat), DocumentationResources.ResourceManager, typeof(DocumentationResources));
         private static readonly LocalizableString SA1641Description = new LocalizableResourceString(nameof(DocumentationResources.SA1641Description), DocumentationResources.ResourceManager, typeof(DocumentationResources));
         private static readonly string SA1641HelpLink = "https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1641.md";
+
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
 
         /// <summary>
         /// Gets the diagnostic descriptor for SA1633 with a missing header.
@@ -167,7 +171,7 @@
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterCompilationStartAction(HandleCompilationStart);
+            context.RegisterCompilationStartAction(CompilationStartAction);
         }
 
         private static void HandleCompilationStart(CompilationStartAnalysisContext context)
@@ -177,183 +181,221 @@
             // Disabling SA1633 will disable all other header related diagnostics.
             if (!compilation.IsAnalyzerSuppressed(SA1633Identifier))
             {
-                context.RegisterSyntaxTreeActionHonorExclusions(ctx => HandleSyntaxTreeAxtion(ctx, compilation));
+                context.RegisterSyntaxTreeActionHonorExclusions((ctx, settings) => Analyzer.HandleSyntaxTree(ctx, settings, compilation));
             }
         }
 
-        private static void HandleSyntaxTreeAxtion(SyntaxTreeAnalysisContext context, Compilation compilation)
+        private static class Analyzer
         {
-            var root = context.Tree.GetRoot(context.CancellationToken);
-            var settings = context.GetStyleCopSettings();
-
-            // don't process empty files
-            if (root.FullSpan.IsEmpty)
+            public static void HandleSyntaxTree(SyntaxTreeAnalysisContext context, StyleCopSettings settings, Compilation compilation)
             {
-                return;
+                var root = context.Tree.GetRoot(context.CancellationToken);
+
+                // don't process empty files
+                if (root.FullSpan.IsEmpty)
+                {
+                    return;
+                }
+
+                if (settings.DocumentationRules.XmlHeader)
+                {
+                    var fileHeader = FileHeaderHelpers.ParseXmlFileHeader(root);
+                    if (fileHeader.IsMissing)
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(SA1633DescriptorMissing, fileHeader.GetLocation(context.Tree)));
+                        return;
+                    }
+
+                    if (fileHeader.IsMalformed)
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(SA1633DescriptorMalformed, fileHeader.GetLocation(context.Tree)));
+                        return;
+                    }
+
+                    if (!compilation.IsAnalyzerSuppressed(SA1634Identifier))
+                    {
+                        CheckCopyrightHeader(context, settings.DocumentationRules, compilation, fileHeader);
+                    }
+
+                    if (!compilation.IsAnalyzerSuppressed(SA1639Identifier))
+                    {
+                        CheckSummaryHeader(context, compilation, fileHeader);
+                    }
+                }
+                else
+                {
+                    var fileHeader = FileHeaderHelpers.ParseFileHeader(root);
+                    if (fileHeader.IsMissing)
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(SA1633DescriptorMissing, fileHeader.GetLocation(context.Tree)));
+                        return;
+                    }
+
+                    if (!compilation.IsAnalyzerSuppressed(SA1635Identifier))
+                    {
+                        if (string.IsNullOrWhiteSpace(fileHeader.CopyrightText))
+                        {
+                            context.ReportDiagnostic(Diagnostic.Create(SA1635Descriptor, fileHeader.GetLocation(context.Tree)));
+                            return;
+                        }
+
+                        if (compilation.IsAnalyzerSuppressed(SA1636Identifier))
+                        {
+                            return;
+                        }
+
+                        if (!CompareCopyrightText(settings.DocumentationRules, fileHeader.CopyrightText))
+                        {
+                            context.ReportDiagnostic(Diagnostic.Create(SA1636Descriptor, fileHeader.GetLocation(context.Tree)));
+                            return;
+                        }
+                    }
+                }
             }
 
-            if (settings.DocumentationRules.XmlHeader)
+            private static void CheckCopyrightHeader(SyntaxTreeAnalysisContext context, DocumentationSettings documentationSettings, Compilation compilation, XmlFileHeader fileHeader)
             {
-                var fileHeader = FileHeaderHelpers.ParseXmlFileHeader(root);
-                if (fileHeader.IsMissing)
+                var copyrightElement = fileHeader.GetElement("copyright");
+                if (copyrightElement == null)
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(SA1633DescriptorMissing, fileHeader.GetLocation(context.Tree)));
+                    context.ReportDiagnostic(Diagnostic.Create(SA1634Descriptor, fileHeader.GetLocation(context.Tree)));
                     return;
                 }
 
-                if (fileHeader.IsMalformed)
+                if (!compilation.IsAnalyzerSuppressed(SA1637Identifier))
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(SA1633DescriptorMalformed, fileHeader.GetLocation(context.Tree)));
-                    return;
+                    CheckFile(context, compilation, fileHeader, copyrightElement);
                 }
 
-                if (!compilation.IsAnalyzerSuppressed(SA1634Identifier))
+                if (!compilation.IsAnalyzerSuppressed(SA1640Identifier))
                 {
-                    CheckCopyrightHeader(context, compilation, settings, fileHeader);
-                }
-
-                if (!compilation.IsAnalyzerSuppressed(SA1639Identifier))
-                {
-                    CheckSummaryHeader(context, compilation, fileHeader);
-                }
-            }
-            else
-            {
-                var fileHeader = FileHeaderHelpers.ParseFileHeader(root);
-                if (fileHeader.IsMissing)
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(SA1633DescriptorMissing, fileHeader.GetLocation(context.Tree)));
-                    return;
+                    CheckCompanyName(context, documentationSettings, compilation, fileHeader, copyrightElement);
                 }
 
                 if (!compilation.IsAnalyzerSuppressed(SA1635Identifier))
                 {
-                    if (string.IsNullOrWhiteSpace(fileHeader.CopyrightText))
-                    {
-                        context.ReportDiagnostic(Diagnostic.Create(SA1635Descriptor, fileHeader.GetLocation(context.Tree)));
-                        return;
-                    }
-
-                    if (compilation.IsAnalyzerSuppressed(SA1636Identifier))
-                    {
-                        return;
-                    }
-
-                    // make sure that both \n and \r\n are accepted from the settings.
-                    var reformattedCopyrightText = settings.DocumentationRules.CopyrightText.Replace("\r\n", "\n").Replace("\n", Environment.NewLine);
-                    if (string.CompareOrdinal(fileHeader.CopyrightText, reformattedCopyrightText) != 0)
-                    {
-                        context.ReportDiagnostic(Diagnostic.Create(SA1636Descriptor, fileHeader.GetLocation(context.Tree)));
-                    }
+                    CheckCopyrightText(context, documentationSettings, compilation, fileHeader, copyrightElement);
                 }
             }
-        }
 
-        private static void CheckCopyrightHeader(SyntaxTreeAnalysisContext context, Compilation compilation, StyleCopSettings settings, XmlFileHeader fileHeader)
-        {
-            var copyrightElement = fileHeader.GetElement("copyright");
-            if (copyrightElement == null)
+            private static void CheckFile(SyntaxTreeAnalysisContext context, Compilation compilation, XmlFileHeader fileHeader, XElement copyrightElement)
             {
-                context.ReportDiagnostic(Diagnostic.Create(SA1634Descriptor, fileHeader.GetLocation(context.Tree)));
-                return;
+                var fileAttribute = copyrightElement.Attribute("file");
+                if (fileAttribute == null)
+                {
+                    var location = fileHeader.GetElementLocation(context.Tree, copyrightElement);
+                    context.ReportDiagnostic(Diagnostic.Create(SA1637Descriptor, location));
+                    return;
+                }
+
+                if (compilation.IsAnalyzerSuppressed(SA1638Identifier))
+                {
+                    return;
+                }
+
+                var fileName = Path.GetFileName(context.Tree.FilePath);
+                if (string.CompareOrdinal(fileAttribute.Value, fileName) != 0)
+                {
+                    var location = fileHeader.GetElementLocation(context.Tree, copyrightElement);
+                    context.ReportDiagnostic(Diagnostic.Create(SA1638Descriptor, location));
+                }
             }
 
-            if (!compilation.IsAnalyzerSuppressed(SA1637Identifier))
+            private static void CheckCopyrightText(SyntaxTreeAnalysisContext context, DocumentationSettings documentationSettings, Compilation compilation, XmlFileHeader fileHeader, XElement copyrightElement)
             {
-                CheckFile(context, compilation, fileHeader, copyrightElement, settings);
+                var copyrightText = copyrightElement.Value;
+                if (string.IsNullOrWhiteSpace(copyrightText))
+                {
+                    var location = fileHeader.GetElementLocation(context.Tree, copyrightElement);
+                    context.ReportDiagnostic(Diagnostic.Create(SA1635Descriptor, location));
+                    return;
+                }
+
+                if (compilation.IsAnalyzerSuppressed(SA1636Identifier))
+                {
+                    return;
+                }
+
+                var settingsCopyrightText = documentationSettings.CopyrightText;
+                if (string.Equals(settingsCopyrightText, DocumentationSettings.DefaultCopyrightText, StringComparison.OrdinalIgnoreCase))
+                {
+                    // The copyright text is meaningless until the company name is configured by the user.
+                    return;
+                }
+
+                // trim any leading / trailing new line or whitespace characters (those are a result of the XML formatting)
+                if (!CompareCopyrightText(documentationSettings, copyrightText.Trim('\r', '\n', ' ', '\t')))
+                {
+                    var location = fileHeader.GetElementLocation(context.Tree, copyrightElement);
+                    context.ReportDiagnostic(Diagnostic.Create(SA1636Descriptor, location));
+                }
             }
 
-            if (!compilation.IsAnalyzerSuppressed(SA1640Identifier))
+            private static void CheckCompanyName(SyntaxTreeAnalysisContext context, DocumentationSettings documentationSettings, Compilation compilation, XmlFileHeader fileHeader, XElement copyrightElement)
             {
-                CheckCompanyName(context, compilation, fileHeader, copyrightElement, settings);
+                var companyName = copyrightElement.Attribute("company")?.Value;
+                if (string.IsNullOrWhiteSpace(companyName))
+                {
+                    var location = fileHeader.GetElementLocation(context.Tree, copyrightElement);
+                    context.ReportDiagnostic(Diagnostic.Create(SA1640Descriptor, location));
+                    return;
+                }
+
+                if (compilation.IsAnalyzerSuppressed(SA1641Identifier))
+                {
+                    return;
+                }
+
+                if (string.Equals(documentationSettings.CompanyName, DocumentationSettings.DefaultCompanyName, StringComparison.OrdinalIgnoreCase))
+                {
+                    // The company name is meaningless until configured by the user.
+                    return;
+                }
+
+                if (string.CompareOrdinal(companyName, documentationSettings.CompanyName) != 0)
+                {
+                    var location = fileHeader.GetElementLocation(context.Tree, copyrightElement);
+                    context.ReportDiagnostic(Diagnostic.Create(SA1641Descriptor, location));
+                }
             }
 
-            if (!compilation.IsAnalyzerSuppressed(SA1635Identifier))
+            private static void CheckSummaryHeader(SyntaxTreeAnalysisContext context, Compilation compilation, XmlFileHeader fileHeader)
             {
-                CheckCopyrightText(context, compilation, fileHeader, copyrightElement, settings);
-            }
-        }
+                var summaryElement = fileHeader.GetElement("summary");
+                if (summaryElement == null)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(SA1639Descriptor, fileHeader.GetLocation(context.Tree)));
+                    return;
+                }
 
-        private static void CheckFile(SyntaxTreeAnalysisContext context, Compilation compilation, XmlFileHeader fileHeader, XElement copyrightElement, StyleCopSettings settings)
-        {
-            var fileAttribute = copyrightElement.Attribute("file");
-            if (fileAttribute == null)
-            {
-                var location = fileHeader.GetElementLocation(context.Tree, copyrightElement);
-                context.ReportDiagnostic(Diagnostic.Create(SA1637Descriptor, location));
-                return;
-            }
-
-            if (compilation.IsAnalyzerSuppressed(SA1638Identifier))
-            {
-                return;
+                if (string.IsNullOrWhiteSpace(summaryElement.Value))
+                {
+                    var location = fileHeader.GetElementLocation(context.Tree, summaryElement);
+                    context.ReportDiagnostic(Diagnostic.Create(SA1639Descriptor, location));
+                }
             }
 
-            var fileName = Path.GetFileName(context.Tree.FilePath);
-            if (string.CompareOrdinal(fileAttribute.Value, fileName) != 0)
+            private static bool CompareCopyrightText(DocumentationSettings documentationSettings, string copyrightText)
             {
-                var location = fileHeader.GetElementLocation(context.Tree, copyrightElement);
-                context.ReportDiagnostic(Diagnostic.Create(SA1638Descriptor, location));
-            }
-        }
+                // make sure that both \n and \r\n are accepted from the settings.
+                var reformattedCopyrightTextParts = documentationSettings.CopyrightText.Replace("\r\n", "\n").Split('\n');
+                var fileHeaderCopyrightTextParts = copyrightText.Replace("\r\n", "\n").Split('\n');
 
-        private static void CheckCopyrightText(SyntaxTreeAnalysisContext context, Compilation compilation, XmlFileHeader fileHeader, XElement copyrightElement, StyleCopSettings settings)
-        {
-            var copyrightText = copyrightElement.Value;
-            if (string.IsNullOrWhiteSpace(copyrightText))
-            {
-                var location = fileHeader.GetElementLocation(context.Tree, copyrightElement);
-                context.ReportDiagnostic(Diagnostic.Create(SA1635Descriptor, location));
-                return;
-            }
+                if (reformattedCopyrightTextParts.Length != fileHeaderCopyrightTextParts.Length)
+                {
+                    return false;
+                }
 
-            if (compilation.IsAnalyzerSuppressed(SA1636Identifier))
-            {
-                return;
-            }
+                // compare line by line, ignoring leading and trailing whitespace on each line.
+                for (var i = 0; i < reformattedCopyrightTextParts.Length; i++)
+                {
+                    if (string.CompareOrdinal(reformattedCopyrightTextParts[i].Trim(), fileHeaderCopyrightTextParts[i].Trim()) != 0)
+                    {
+                        return false;
+                    }
+                }
 
-            if (string.CompareOrdinal(copyrightText.Trim(' ', '\r', '\n'), settings.DocumentationRules.CopyrightText) != 0)
-            {
-                var location = fileHeader.GetElementLocation(context.Tree, copyrightElement);
-                context.ReportDiagnostic(Diagnostic.Create(SA1636Descriptor, location));
-            }
-        }
-
-        private static void CheckCompanyName(SyntaxTreeAnalysisContext context, Compilation compilation, XmlFileHeader fileHeader, XElement copyrightElement, StyleCopSettings settings)
-        {
-            var companyName = copyrightElement.Attribute("company")?.Value;
-            if (string.IsNullOrWhiteSpace(companyName))
-            {
-                var location = fileHeader.GetElementLocation(context.Tree, copyrightElement);
-                context.ReportDiagnostic(Diagnostic.Create(SA1640Descriptor, location));
-                return;
-            }
-
-            if (compilation.IsAnalyzerSuppressed(SA1641Identifier))
-            {
-                return;
-            }
-
-            if (string.CompareOrdinal(companyName, settings.DocumentationRules.CompanyName) != 0)
-            {
-                var location = fileHeader.GetElementLocation(context.Tree, copyrightElement);
-                context.ReportDiagnostic(Diagnostic.Create(SA1641Descriptor, location));
-            }
-        }
-
-        private static void CheckSummaryHeader(SyntaxTreeAnalysisContext context, Compilation compilation, XmlFileHeader fileHeader)
-        {
-            var summaryElement = fileHeader.GetElement("summary");
-            if (summaryElement == null)
-            {
-                context.ReportDiagnostic(Diagnostic.Create(SA1639Descriptor, fileHeader.GetLocation(context.Tree)));
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(summaryElement.Value))
-            {
-                var location = fileHeader.GetElementLocation(context.Tree, summaryElement);
-                context.ReportDiagnostic(Diagnostic.Create(SA1639Descriptor, location));
+                return true;
             }
         }
     }

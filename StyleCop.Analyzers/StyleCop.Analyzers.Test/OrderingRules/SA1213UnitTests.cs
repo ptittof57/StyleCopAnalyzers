@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.OrderingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.OrderingRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -102,6 +105,7 @@ public class Foo
         {
             this.nameChanged += value;
         }
+
         // This is the remove accessor.
         remove
         {
@@ -162,6 +166,7 @@ public class Foo
         {
             this.nameChanged += value;
         }
+
         /*
          * This is the remove accessor.
          */

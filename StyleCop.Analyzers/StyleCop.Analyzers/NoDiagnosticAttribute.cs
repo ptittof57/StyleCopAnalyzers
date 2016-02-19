@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers
 {
     using System;
     using Microsoft.CodeAnalysis.Diagnostics;
@@ -17,7 +20,7 @@
     /// <para>The <see cref="Reason"/> should be provided.</para>
     /// </remarks>
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-    public sealed class NoDiagnosticAttribute : System.Attribute
+    internal sealed class NoDiagnosticAttribute : System.Attribute
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="NoDiagnosticAttribute"/> class.

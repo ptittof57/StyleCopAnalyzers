@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.LayoutRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.LayoutRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -11,7 +14,7 @@
     using Xunit;
 
     /// <summary>
-    /// Unit tests for the <see cref="SA1505OpeningCurlyBracketsMustNotBeFollowedByBlankLine"/> class.
+    /// Unit tests for the <see cref="SA1505OpeningBracesMustNotBeFollowedByBlankLine"/> class.
     /// </summary>
     public class SA1505UnitTests : CodeFixVerifier
     {
@@ -822,7 +825,7 @@
         }
 
         /// <summary>
-        /// Verifies that an opening curly bracket followed by a comment will not trigger any diagnostics.
+        /// Verifies that an opening brace followed by a comment will not trigger any diagnostics.
         /// </summary>
         /// <remarks>Tests regression for #971.</remarks>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
@@ -852,14 +855,14 @@
         }
 
         /// <summary>
-        /// Verifies that an opening curly bracket at the end of the file will not trigger any diagnostics.
+        /// Verifies that an opening brace at the end of the file will not trigger any diagnostics.
         /// </summary>
         /// <remarks>
         /// <para>This is a regression test for DotNetAnalyzers/StyleCopAnalyzers#981.</para>
         /// </remarks>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
-        public async Task TestOpeningBracketAtEndOfFileAsync()
+        public async Task TestOpeningBraceAtEndOfFileAsync()
         {
             var testCode = @"namespace TestNamespace
 {
@@ -880,7 +883,7 @@
         /// <inheritdoc/>
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()
         {
-            yield return new SA1505OpeningCurlyBracketsMustNotBeFollowedByBlankLine();
+            yield return new SA1505OpeningBracesMustNotBeFollowedByBlankLine();
         }
 
         /// <inheritdoc/>

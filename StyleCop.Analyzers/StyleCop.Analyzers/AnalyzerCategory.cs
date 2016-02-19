@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers
 {
     /// <summary>
     /// Class defining the analyzer category constants.
@@ -39,5 +42,10 @@
         /// Category definition for spacing rules.
         /// </summary>
         internal const string SpacingRules = "StyleCop.CSharp.SpacingRules";
+
+        /// <summary>
+        /// Category definition for special purpose rules.
+        /// </summary>
+        internal const string SpecialRules = "StyleCop.CSharp.SpecialRules";
     }
 }

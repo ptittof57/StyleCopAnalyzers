@@ -2,8 +2,9 @@ param (
 	[switch]$Debug,
 	[string]$VisualStudioVersion = '14.0',
 	[switch]$SkipKeyCheck,
-	[string]$Verbosity = 'normal',
-	[string]$Logger
+	[string]$Verbosity = 'minimal',
+	[string]$Logger,
+	[switch]$Incremental
 )
 
 # build the solution
@@ -46,6 +47,10 @@ If (-not (Test-Path $nuget)) {
 
 # build the main project
 $msbuild = "${env:ProgramFiles(x86)}\MSBuild\$VisualStudioVersion\Bin\MSBuild.exe"
+If (-not (Test-Path $msbuild)) {
+	$host.UI.WriteErrorLine("Couldn't find MSBuild.exe")
+	exit 1
+}
 
 # Attempt to restore packages up to 3 times, to improve resiliency to connection timeouts and access denied errors.
 $maxAttempts = 3
@@ -63,10 +68,21 @@ If ($Logger) {
 	$LoggerArgument = "/logger:$Logger"
 }
 
-&$msbuild '/nologo' '/m' '/nr:false' '/t:rebuild' $LoggerArgument "/verbosity:$Verbosity" "/p:Configuration=$BuildConfig" "/p:VisualStudioVersion=$VisualStudioVersion" "/p:KeyConfiguration=$KeyConfiguration" $SolutionPath
+If ($Incremental) {
+	$Target = 'build'
+} Else {
+	$Target = 'rebuild'
+}
+
+&$msbuild '/nologo' '/m' '/nr:false' "/t:$Target" $LoggerArgument "/verbosity:$Verbosity" "/p:Configuration=$BuildConfig" "/p:VisualStudioVersion=$VisualStudioVersion" "/p:KeyConfiguration=$KeyConfiguration" $SolutionPath
 If (-not $?) {
 	$host.ui.WriteErrorLine('Build failed, aborting!')
 	exit $LASTEXITCODE
+}
+
+if ($Incremental) {
+	# Skip NuGet validation and copying packages to the output directory
+	exit 0
 }
 
 # By default, do not create a NuGet package unless the expected strong name key files were used
@@ -74,7 +90,15 @@ if (-not $SkipKeyCheck) {
 	. .\keys.ps1
 
 	foreach ($pair in $Keys.GetEnumerator()) {
-		$assembly = Resolve-FullPath -Path "..\StyleCop.Analyzers\StyleCop.Analyzers\bin\$BuildConfig\StyleCop.Analyzers.dll"
+		$assembly = Resolve-FullPath -Path "..\StyleCop.Analyzers\StyleCop.Analyzers.CodeFixes\bin\$BuildConfig\StyleCop.Analyzers.dll"
+		# Run the actual check in a separate process or the current process will keep the assembly file locked
+		powershell -Command ".\check-key.ps1 -Assembly '$assembly' -ExpectedKey '$($pair.Value)' -Build '$($pair.Key)'"
+		If (-not $?) {
+			$host.ui.WriteErrorLine('Failed to verify strong name key for build, aborting!')
+			exit $LASTEXITCODE
+		}
+
+		$assembly = Resolve-FullPath -Path "..\StyleCop.Analyzers\StyleCop.Analyzers.CodeFixes\bin\$BuildConfig\StyleCop.Analyzers.CodeFixes.dll"
 		# Run the actual check in a separate process or the current process will keep the assembly file locked
 		powershell -Command ".\check-key.ps1 -Assembly '$assembly' -ExpectedKey '$($pair.Value)' -Build '$($pair.Key)'"
 		If (-not $?) {
@@ -88,5 +112,5 @@ if (-not (Test-Path 'nuget')) {
 	mkdir "nuget"
 }
 
-Copy-Item "..\StyleCop.Analyzers\StyleCop.Analyzers\bin\$BuildConfig\StyleCop.Analyzers.$Version.nupkg" 'nuget'
-Copy-Item "..\StyleCop.Analyzers\StyleCop.Analyzers\bin\$BuildConfig\StyleCop.Analyzers.$Version.symbols.nupkg" 'nuget'
+Copy-Item "..\StyleCop.Analyzers\StyleCop.Analyzers.CodeFixes\bin\$BuildConfig\StyleCop.Analyzers.$Version.nupkg" 'nuget'
+Copy-Item "..\StyleCop.Analyzers\StyleCop.Analyzers.CodeFixes\bin\$BuildConfig\StyleCop.Analyzers.$Version.symbols.nupkg" 'nuget'

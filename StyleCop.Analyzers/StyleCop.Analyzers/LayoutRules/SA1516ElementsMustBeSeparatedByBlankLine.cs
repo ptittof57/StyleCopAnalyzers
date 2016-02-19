@@ -1,5 +1,9 @@
-﻿namespace StyleCop.Analyzers.LayoutRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.LayoutRules
 {
+    using System;
     using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.Linq;
@@ -52,7 +56,7 @@
     /// is multi-line.</para>
     /// </remarks>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class SA1516ElementsMustBeSeparatedByBlankLine : DiagnosticAnalyzer
+    internal class SA1516ElementsMustBeSeparatedByBlankLine : DiagnosticAnalyzer
     {
         /// <summary>
         /// The ID for diagnostics produced by the <see cref="SA1516ElementsMustBeSeparatedByBlankLine"/> analyzer.
@@ -66,43 +70,35 @@
         private static readonly DiagnosticDescriptor Descriptor =
             new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, AnalyzerCategory.LayoutRules, DiagnosticSeverity.Warning, AnalyzerConstants.EnabledByDefault, Description, HelpLink);
 
-        private static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsValue =
-            ImmutableArray.Create(Descriptor);
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
+        private static readonly Action<SyntaxNodeAnalysisContext> TypeDeclarationAction = HandleTypeDeclaration;
+        private static readonly Action<SyntaxNodeAnalysisContext> CompilationUnitAction = HandleCompilationUnit;
+        private static readonly Action<SyntaxNodeAnalysisContext> NamespaceDeclarationAction = HandleNamespaceDeclaration;
+        private static readonly Action<SyntaxNodeAnalysisContext> BasePropertyDeclarationAction = HandleBasePropertyDeclaration;
 
         /// <inheritdoc/>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        {
-            get
-            {
-                return SupportedDiagnosticsValue;
-            }
-        }
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
+            ImmutableArray.Create(Descriptor);
 
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterCompilationStartAction(HandleCompilationStart);
+            context.RegisterCompilationStartAction(CompilationStartAction);
         }
 
         private static void HandleCompilationStart(CompilationStartAnalysisContext context)
         {
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleTypeDeclaration, SyntaxKind.ClassDeclaration);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleTypeDeclaration, SyntaxKind.StructDeclaration);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleTypeDeclaration, SyntaxKind.InterfaceDeclaration);
-
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleCompilationUnit, SyntaxKind.CompilationUnit);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleNamespaceDeclaration, SyntaxKind.NamespaceDeclaration);
-
-            context.RegisterSyntaxNodeActionHonorExclusions(HandlePropertyDeclaration, SyntaxKind.PropertyDeclaration);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandlePropertyDeclaration, SyntaxKind.EventDeclaration);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandlePropertyDeclaration, SyntaxKind.IndexerDeclaration);
+            context.RegisterSyntaxNodeActionHonorExclusions(TypeDeclarationAction, SyntaxKinds.TypeDeclaration);
+            context.RegisterSyntaxNodeActionHonorExclusions(CompilationUnitAction, SyntaxKind.CompilationUnit);
+            context.RegisterSyntaxNodeActionHonorExclusions(NamespaceDeclarationAction, SyntaxKind.NamespaceDeclaration);
+            context.RegisterSyntaxNodeActionHonorExclusions(BasePropertyDeclarationAction, SyntaxKinds.BasePropertyDeclaration);
         }
 
-        private static void HandlePropertyDeclaration(SyntaxNodeAnalysisContext context)
+        private static void HandleBasePropertyDeclaration(SyntaxNodeAnalysisContext context)
         {
-            var propertyDeclaration = context.Node as BasePropertyDeclarationSyntax;
+            var propertyDeclaration = (BasePropertyDeclarationSyntax)context.Node;
 
-            if (propertyDeclaration?.AccessorList?.Accessors != null)
+            if (propertyDeclaration.AccessorList?.Accessors != null)
             {
                 var accessors = propertyDeclaration.AccessorList.Accessors;
 
@@ -189,13 +185,15 @@
                 if (!members[i - 1].ContainsDiagnostics && !members[i].ContainsDiagnostics)
                 {
                     // Report if
-                    // the previous declaration spans across multiple lines
+                    // the current declaration is not a field declaration
                     // or the previous declaration is of different type
-                    // or the current declaration has documentation
-                    // or the current declaration is not a field declaration,
-                    if (IsMultiline(members[i - 1])
+                    // or the previous declaration spans across multiple lines
+                    //
+                    // Note that the order of checking is important, as the call to IsMultiLine requires a FieldDeclarationSyntax,
+                    // something that can only be guaranteed if the first two checks fail.
+                    if (!members[i].IsKind(SyntaxKind.FieldDeclaration)
                         || !members[i - 1].IsKind(members[i].Kind())
-                        || !members[i].IsKind(SyntaxKind.FieldDeclaration))
+                        || IsMultiline((FieldDeclarationSyntax)members[i - 1]))
                     {
                         ReportIfThereIsNoBlankLine(context, members[i - 1], members[i]);
                     }
@@ -203,10 +201,30 @@
             }
         }
 
-        private static bool IsMultiline(SyntaxNode node)
+        private static bool IsMultiline(FieldDeclarationSyntax fieldDeclaration)
         {
-            var lineSpan = node.GetLineSpan();
+            var lineSpan = fieldDeclaration.GetLineSpan();
+            var attributeLists = fieldDeclaration.AttributeLists;
 
+            int startLine;
+
+            // Exclude attributes when determining if a field declaration spans multiple lines
+            if (attributeLists.Count > 0)
+            {
+                var lastAttributeSpan = fieldDeclaration.SyntaxTree.GetLineSpan(attributeLists.Last().FullSpan);
+                startLine = lastAttributeSpan.EndLinePosition.Line;
+            }
+            else
+            {
+                startLine = lineSpan.StartLinePosition.Line;
+            }
+
+            return startLine != lineSpan.EndLinePosition.Line;
+        }
+
+        private static bool IsMultiline(AccessorDeclarationSyntax accessorDeclaration)
+        {
+            var lineSpan = accessorDeclaration.GetLineSpan();
             return lineSpan.StartLinePosition.Line != lineSpan.EndLinePosition.Line;
         }
 

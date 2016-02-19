@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.MaintainabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.MaintainabilityRules
 {
     using System;
     using System.Collections.Generic;
@@ -83,11 +86,6 @@ public class Foo
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()
         {
             yield return new SA1405DebugAssertMustProvideMessageText();
-        }
-
-        protected override CodeFixProvider GetCSharpCodeFixProvider()
-        {
-            throw new NotSupportedException();
         }
     }
 }

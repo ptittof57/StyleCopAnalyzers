@@ -1,5 +1,9 @@
-﻿namespace StyleCop.Analyzers.ReadabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.ReadabilityRules
 {
+    using System;
     using System.Collections.Immutable;
     using Helpers;
     using Microsoft.CodeAnalysis;
@@ -15,7 +19,7 @@
     /// keyword are on the same line.</para>
     /// </remarks>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class SA1127GenericTypeConstraintsMustBeOnOwnLine : DiagnosticAnalyzer
+    internal class SA1127GenericTypeConstraintsMustBeOnOwnLine : DiagnosticAnalyzer
     {
         /// <summary>
         /// The ID for diagnostics produced by the <see cref="SA1127GenericTypeConstraintsMustBeOnOwnLine"/>
@@ -29,69 +33,30 @@
         private static readonly DiagnosticDescriptor Descriptor =
             new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, AnalyzerCategory.ReadabilityRules, DiagnosticSeverity.Warning, AnalyzerConstants.EnabledByDefault, Description, HelpLink);
 
-        private static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsValue =
-            ImmutableArray.Create(Descriptor);
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
+        private static readonly Action<SyntaxNodeAnalysisContext> TypeParameterConstraintClauseAction = HandleTypeParameterConstraintClause;
 
         /// <inheritdoc/>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        {
-            get
-            {
-                return SupportedDiagnosticsValue;
-            }
-        }
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
+            ImmutableArray.Create(Descriptor);
 
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterCompilationStartAction(HandleCompilationStart);
+            context.RegisterCompilationStartAction(CompilationStartAction);
         }
 
         private static void HandleCompilationStart(CompilationStartAnalysisContext context)
         {
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleMethodDeclaration, SyntaxKind.MethodDeclaration);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleTypeDeclaration, SyntaxKind.ClassDeclaration);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleTypeDeclaration, SyntaxKind.StructDeclaration);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleTypeDeclaration, SyntaxKind.InterfaceDeclaration);
+            context.RegisterSyntaxNodeActionHonorExclusions(TypeParameterConstraintClauseAction, SyntaxKind.TypeParameterConstraintClause);
         }
 
-        private static void HandleMethodDeclaration(SyntaxNodeAnalysisContext context)
+        private static void HandleTypeParameterConstraintClause(SyntaxNodeAnalysisContext context)
         {
-            var declaration = (MethodDeclarationSyntax)context.Node;
-            var declarationLineSpan = declaration.GetLineSpan();
-
-            if (declaration.TypeParameterList?.Parameters.Count > 0)
+            var syntax = (TypeParameterConstraintClauseSyntax)context.Node;
+            if (!syntax.WhereKeyword.IsFirstInLine())
             {
-                Analyze(context, declarationLineSpan, declaration.ConstraintClauses);
-            }
-        }
-
-        private static void HandleTypeDeclaration(SyntaxNodeAnalysisContext context)
-        {
-            var declaration = (TypeDeclarationSyntax)context.Node;
-            var declarationLineSpan = declaration.GetLineSpan();
-
-            if (declaration.TypeParameterList?.Parameters.Count > 0)
-            {
-                Analyze(context, declarationLineSpan, declaration.ConstraintClauses);
-            }
-        }
-
-        private static void Analyze(
-            SyntaxNodeAnalysisContext context,
-            FileLinePositionSpan declarationLineSpan,
-            SyntaxList<TypeParameterConstraintClauseSyntax> constraintClauses)
-        {
-            int currentLine = declarationLineSpan.StartLinePosition.Line;
-            foreach (var constraint in constraintClauses)
-            {
-                int constraintLine = constraint.GetLineSpan().StartLinePosition.Line;
-                if (currentLine == constraintLine)
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(Descriptor, constraint.GetLocation()));
-                }
-
-                currentLine = constraintLine;
+                context.ReportDiagnostic(Diagnostic.Create(Descriptor, syntax.GetLocation()));
             }
         }
     }

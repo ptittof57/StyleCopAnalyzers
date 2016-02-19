@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="RemoveRegionCodeFix" xml:space="preserve">
+    <value>Remove region</value>
+  </data>
   <data name="SA1100CodeFix" xml:space="preserve">
     <value>Replace 'base.' with 'this.'</value>
   </data>
@@ -189,6 +192,9 @@
   <data name="SA1105Title" xml:space="preserve">
     <value>Query clauses spanning multiple lines must begin on own line</value>
   </data>
+  <data name="SA1106CodeFix" xml:space="preserve">
+    <value>Remove empty statement</value>
+  </data>
   <data name="SA1106Description" xml:space="preserve">
     <value>The C# code contains an extra semicolon.</value>
   </data>
@@ -211,7 +217,7 @@
     <value>Code must not contain multiple statements on one line</value>
   </data>
   <data name="SA1108Description" xml:space="preserve">
-    <value>A C# statement contains a comment between the declaration of the statement and the opening curly bracket of the statement.</value>
+    <value>A C# statement contains a comment between the declaration of the statement and the opening brace of the statement.</value>
   </data>
   <data name="SA1108MessageFormat" xml:space="preserve">
     <value>Block statements must not contain embedded comments</value>
@@ -220,7 +226,7 @@
     <value>Block statements must not contain embedded comments</value>
   </data>
   <data name="SA1109Description" xml:space="preserve">
-    <value>A C# statement contains a region tag between the declaration of the statement and the opening curly bracket of the statement.</value>
+    <value>A C# statement contains a region tag between the declaration of the statement and the opening brace of the statement.</value>
   </data>
   <data name="SA1109MessageFormat" xml:space="preserve">
     <value />
@@ -298,7 +304,7 @@
     <value>The parameters to a C# method or indexer call or declaration are not all on the same line or each on a separate line.</value>
   </data>
   <data name="SA1117MessageFormat" xml:space="preserve">
-    <value />
+    <value>The parameters must all be placed on the same line or each parameter must be placed on its own line.</value>
   </data>
   <data name="SA1117Title" xml:space="preserve">
     <value>Parameters must be on same line or separate lines</value>
@@ -395,5 +401,98 @@
   </data>
   <data name="SA1127Title" xml:space="preserve">
     <value>Generic type constraints must be on their own line</value>
+  </data>
+  <data name="SA1128CodeFix" xml:space="preserve">
+    <value>Place constructor initializer on own line</value>
+  </data>
+  <data name="SA1128Description" xml:space="preserve">
+    <value>A constructor initializer, including the colon character, should be on its own line.</value>
+  </data>
+  <data name="SA1128MessageFormat" xml:space="preserve">
+    <value>Put constructor initializers on their own line</value>
+  </data>
+  <data name="SA1128Title" xml:space="preserve">
+    <value>Put constructor initializers on their own line</value>
+  </data>
+  <data name="SA1129CodeFix" xml:space="preserve">
+    <value>Replace with default(T)</value>
+  </data>
+  <data name="SA1129Description" xml:space="preserve">
+    <value>When creating a new instance of a value type T, the syntax 'default(T)' is functionally equivalent to the syntax 'new T()'. To avoid confusion regarding the behavior of the resulting instance, the first form is preferred.</value>
+  </data>
+  <data name="SA1129MessageFormat" xml:space="preserve">
+    <value>Do not use default value type constructor</value>
+  </data>
+  <data name="SA1129Title" xml:space="preserve">
+    <value>Do not use default value type constructor</value>
+  </data>
+  <data name="SA1130Description" xml:space="preserve">
+    <value>Lambda expressions are more succinct and easier to read than anonymous methods, so they should are preferred whenever the two are functionally equivalent.</value>
+  </data>
+  <data name="SA1130MessageFormat" xml:space="preserve">
+    <value>Use lambda syntax</value>
+  </data>
+  <data name="SA1130Title" xml:space="preserve">
+    <value>Use lambda syntax</value>
+  </data>
+  <data name="SA1131CodeFix" xml:space="preserve">
+    <value>Swap operands</value>
+  </data>
+  <data name="SA1131Description" xml:space="preserve">
+    <value>When a comparison is made between a variable and a literal, the variable should be placed on the left-hand-side to maximize readability.</value>
+  </data>
+  <data name="SA1131MessageFormat" xml:space="preserve">
+    <value>Constant values should appear on the right-hand side of comparisons</value>
+  </data>
+  <data name="SA1131Title" xml:space="preserve">
+    <value>Use readable conditions</value>
+  </data>
+  <data name="SA1132CodeFix" xml:space="preserve">
+    <value>Place each field on a new line</value>
+  </data>
+  <data name="SA1132Description" xml:space="preserve">
+    <value>Each field should be declared on its own line, in order to clearly see each field of a type and allow for proper documentation of the behavior of each field.</value>
+  </data>
+  <data name="SA1132MessageFormat" xml:space="preserve">
+    <value>Each field should be declared on its own line</value>
+  </data>
+  <data name="SA1132Title" xml:space="preserve">
+    <value>Do not combine fields</value>
+  </data>
+  <data name="SA1133CodeFix" xml:space="preserve">
+    <value>Give each attribute its own square brackets</value>
+  </data>
+  <data name="SA1133Description" xml:space="preserve">
+    <value>Each attribute usage should be placed in its own set of square brackets for maximum readability.</value>
+  </data>
+  <data name="SA1133MessageFormat" xml:space="preserve">
+    <value>Each attribute should be placed in its own set of square brackets.</value>
+  </data>
+  <data name="SA1133Title" xml:space="preserve">
+    <value>Do not combine attributes</value>
+  </data>
+  <data name="SA1134CodeFix" xml:space="preserve">
+    <value>Place attribute on own line.</value>
+  </data>
+  <data name="SA1134Description" xml:space="preserve">
+    <value>Each attribute should be placed on its own line of code.</value>
+  </data>
+  <data name="SA1134MessageFormat" xml:space="preserve">
+    <value>Each attribute should be placed on its own line of code.</value>
+  </data>
+  <data name="SA1134Title" xml:space="preserve">
+    <value>Attributes must not share line</value>
+  </data>
+  <data name="SX1101CodeFix" xml:space="preserve">
+    <value>Remove 'this.' prefix</value>
+  </data>
+  <data name="SX1101Description" xml:space="preserve">
+    <value>A call to an instance member of the local class or a base class is prefixed with `this.`.</value>
+  </data>
+  <data name="SX1101MessageFormat" xml:space="preserve">
+    <value>Do not prefix local calls with 'this.'</value>
+  </data>
+  <data name="SX1101Title" xml:space="preserve">
+    <value>Do not prefix local calls with 'this.'</value>
   </data>
 </root>

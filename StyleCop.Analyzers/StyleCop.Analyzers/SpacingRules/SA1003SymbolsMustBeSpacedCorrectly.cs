@@ -1,7 +1,10 @@
-﻿namespace StyleCop.Analyzers.SpacingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.SpacingRules
 {
+    using System;
     using System.Collections.Immutable;
-    using System.Linq;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -39,7 +42,7 @@
     /// </code>
     /// </remarks>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class SA1003SymbolsMustBeSpacedCorrectly : DiagnosticAnalyzer
+    internal class SA1003SymbolsMustBeSpacedCorrectly : DiagnosticAnalyzer
     {
         /// <summary>
         /// The ID for diagnostics produced by the <see cref="SA1003SymbolsMustBeSpacedCorrectly"/> analyzer.
@@ -63,6 +66,74 @@
         private const string MessageFormatNotAtEndOfLine = "Operator '{0}' must not appear at the end of a line.";
         private const string Description = "The spacing around an operator symbol is incorrect, within a C# code file.";
         private const string HelpLink = "https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1003.md";
+
+        private static readonly ImmutableArray<SyntaxKind> BinaryExpressionKinds =
+            ImmutableArray.Create(
+                SyntaxKind.CoalesceExpression,
+                SyntaxKind.IsExpression,
+                SyntaxKind.AsExpression,
+                SyntaxKind.BitwiseOrExpression,
+                SyntaxKind.ExclusiveOrExpression,
+                SyntaxKind.BitwiseAndExpression,
+                SyntaxKind.EqualsExpression,
+                SyntaxKind.NotEqualsExpression,
+                SyntaxKind.LessThanExpression,
+                SyntaxKind.LessThanOrEqualExpression,
+                SyntaxKind.GreaterThanExpression,
+                SyntaxKind.GreaterThanOrEqualExpression,
+                SyntaxKind.LeftShiftExpression,
+                SyntaxKind.RightShiftExpression,
+                SyntaxKind.AddExpression,
+                SyntaxKind.SubtractExpression,
+                SyntaxKind.MultiplyExpression,
+                SyntaxKind.DivideExpression,
+                SyntaxKind.ModuloExpression,
+                SyntaxKind.LogicalAndExpression,
+                SyntaxKind.LogicalOrExpression);
+
+        private static readonly ImmutableArray<SyntaxKind> PrefixUnaryExpressionKinds =
+            ImmutableArray.Create(
+                SyntaxKind.UnaryPlusExpression,
+                SyntaxKind.UnaryMinusExpression,
+                SyntaxKind.BitwiseNotExpression,
+                SyntaxKind.LogicalNotExpression,
+                SyntaxKind.PreIncrementExpression,
+                SyntaxKind.PreDecrementExpression,
+                SyntaxKind.AddressOfExpression);
+
+        private static readonly ImmutableArray<SyntaxKind> PostfixUnaryExpressionKinds =
+            ImmutableArray.Create(SyntaxKind.PostIncrementExpression, SyntaxKind.PostDecrementExpression);
+
+        private static readonly ImmutableArray<SyntaxKind> AssignmentExpressionKinds =
+            ImmutableArray.Create(
+                SyntaxKind.OrAssignmentExpression,
+                SyntaxKind.AndAssignmentExpression,
+                SyntaxKind.ExclusiveOrAssignmentExpression,
+                SyntaxKind.LeftShiftAssignmentExpression,
+                SyntaxKind.RightShiftAssignmentExpression,
+                SyntaxKind.AddAssignmentExpression,
+                SyntaxKind.SubtractAssignmentExpression,
+                SyntaxKind.MultiplyAssignmentExpression,
+                SyntaxKind.DivideAssignmentExpression,
+                SyntaxKind.ModuloAssignmentExpression,
+                SyntaxKind.SimpleAssignmentExpression);
+
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
+        private static readonly Action<SyntaxNodeAnalysisContext> ConstructorDeclarationAction = HandleConstructorDeclaration;
+        private static readonly Action<SyntaxNodeAnalysisContext> ConditionalExpressionAction = HandleConditionalExpression;
+        private static readonly Action<SyntaxNodeAnalysisContext> TypeParameterConstraintClauseAction = HandleTypeParameterConstraintClause;
+        private static readonly Action<SyntaxNodeAnalysisContext> BinaryExpressionAction = HandleBinaryExpression;
+        private static readonly Action<SyntaxNodeAnalysisContext> PrefixUnaryExpressionAction = HandlePrefixUnaryExpression;
+        private static readonly Action<SyntaxNodeAnalysisContext> PostfixUnaryExpressionAction = HandlePostfixUnaryExpression;
+        private static readonly Action<SyntaxNodeAnalysisContext> AssignmentExpressionAction = HandleAssignmentExpression;
+        private static readonly Action<SyntaxNodeAnalysisContext> CastExpressionAction = HandleCastExpression;
+        private static readonly Action<SyntaxNodeAnalysisContext> EqualsValueClauseAction = HandleEqualsValueClause;
+        private static readonly Action<SyntaxNodeAnalysisContext> LambdaExpressionAction = HandleLambdaExpression;
+        private static readonly Action<SyntaxNodeAnalysisContext> PropertyDeclarationAction = HandlePropertyDeclaration;
+        private static readonly Action<SyntaxNodeAnalysisContext> MethodDeclarationAction = HandleMethodDeclaration;
+        private static readonly Action<SyntaxNodeAnalysisContext> OperatorDeclarationAction = HandleOperatorDeclaration;
+        private static readonly Action<SyntaxNodeAnalysisContext> ConversionOperatorDeclarationAction = HandleConversionOperatorDeclaration;
+        private static readonly Action<SyntaxNodeAnalysisContext> IndexerDeclarationAction = HandleIndexerDeclaration;
 
         /// <summary>
         /// Gets the descriptor for prefix unary expression that may not be followed by a comment.
@@ -125,21 +196,26 @@
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterCompilationStartAction(HandleCompilationStart);
+            context.RegisterCompilationStartAction(CompilationStartAction);
         }
 
         private static void HandleCompilationStart(CompilationStartAnalysisContext context)
         {
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleConstructorDeclaration, SyntaxKind.ConstructorDeclaration);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleConditionalExpression, SyntaxKind.ConditionalExpression);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleTypeParameterConstraint, SyntaxKind.TypeParameterConstraintClause);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleBinaryExpression, SyntaxKind.CoalesceExpression, SyntaxKind.IsExpression, SyntaxKind.AsExpression, SyntaxKind.BitwiseOrExpression, SyntaxKind.ExclusiveOrExpression, SyntaxKind.BitwiseAndExpression, SyntaxKind.EqualsExpression, SyntaxKind.NotEqualsExpression, SyntaxKind.LessThanExpression, SyntaxKind.LessThanOrEqualExpression, SyntaxKind.GreaterThanExpression, SyntaxKind.GreaterThanOrEqualExpression, SyntaxKind.LeftShiftExpression, SyntaxKind.RightShiftExpression, SyntaxKind.AddExpression, SyntaxKind.SubtractExpression, SyntaxKind.MultiplyExpression, SyntaxKind.DivideExpression, SyntaxKind.ModuloExpression, SyntaxKind.LogicalAndExpression, SyntaxKind.LogicalOrExpression);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandlePrefixUnaryExpression, SyntaxKind.UnaryPlusExpression, SyntaxKind.UnaryMinusExpression, SyntaxKind.BitwiseNotExpression, SyntaxKind.LogicalNotExpression, SyntaxKind.PreIncrementExpression, SyntaxKind.PreDecrementExpression, SyntaxKind.AddressOfExpression, SyntaxKind.PointerIndirectionExpression);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandlePostfixUnaryExpression, SyntaxKind.PostIncrementExpression, SyntaxKind.PostDecrementExpression);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleAssignmentExpression, SyntaxKind.OrAssignmentExpression, SyntaxKind.AndAssignmentExpression, SyntaxKind.ExclusiveOrAssignmentExpression, SyntaxKind.LeftShiftAssignmentExpression, SyntaxKind.RightShiftAssignmentExpression, SyntaxKind.AddAssignmentExpression, SyntaxKind.SubtractAssignmentExpression, SyntaxKind.MultiplyAssignmentExpression, SyntaxKind.DivideAssignmentExpression, SyntaxKind.ModuloAssignmentExpression, SyntaxKind.SimpleAssignmentExpression);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleCastExpression, SyntaxKind.CastExpression);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleEqualsValueClause, SyntaxKind.EqualsValueClause);
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleLambdaExpression, SyntaxKind.ParenthesizedLambdaExpression, SyntaxKind.SimpleLambdaExpression);
+            context.RegisterSyntaxNodeActionHonorExclusions(ConstructorDeclarationAction, SyntaxKind.ConstructorDeclaration);
+            context.RegisterSyntaxNodeActionHonorExclusions(ConditionalExpressionAction, SyntaxKind.ConditionalExpression);
+            context.RegisterSyntaxNodeActionHonorExclusions(TypeParameterConstraintClauseAction, SyntaxKind.TypeParameterConstraintClause);
+            context.RegisterSyntaxNodeActionHonorExclusions(BinaryExpressionAction, BinaryExpressionKinds);
+            context.RegisterSyntaxNodeActionHonorExclusions(PrefixUnaryExpressionAction, PrefixUnaryExpressionKinds);
+            context.RegisterSyntaxNodeActionHonorExclusions(PostfixUnaryExpressionAction, PostfixUnaryExpressionKinds);
+            context.RegisterSyntaxNodeActionHonorExclusions(AssignmentExpressionAction, AssignmentExpressionKinds);
+            context.RegisterSyntaxNodeActionHonorExclusions(CastExpressionAction, SyntaxKind.CastExpression);
+            context.RegisterSyntaxNodeActionHonorExclusions(EqualsValueClauseAction, SyntaxKind.EqualsValueClause);
+            context.RegisterSyntaxNodeActionHonorExclusions(LambdaExpressionAction, SyntaxKinds.LambdaExpression);
+            context.RegisterSyntaxNodeActionHonorExclusions(PropertyDeclarationAction, SyntaxKind.PropertyDeclaration);
+            context.RegisterSyntaxNodeActionHonorExclusions(IndexerDeclarationAction, SyntaxKind.IndexerDeclaration);
+            context.RegisterSyntaxNodeActionHonorExclusions(MethodDeclarationAction, SyntaxKind.MethodDeclaration);
+            context.RegisterSyntaxNodeActionHonorExclusions(OperatorDeclarationAction, SyntaxKind.OperatorDeclaration);
+            context.RegisterSyntaxNodeActionHonorExclusions(ConversionOperatorDeclarationAction, SyntaxKind.ConversionOperatorDeclaration);
         }
 
         private static void HandleConstructorDeclaration(SyntaxNodeAnalysisContext context)
@@ -161,7 +237,7 @@
             CheckToken(context, conditionalExpression.ColonToken, true, true, true);
         }
 
-        private static void HandleTypeParameterConstraint(SyntaxNodeAnalysisContext context)
+        private static void HandleTypeParameterConstraintClause(SyntaxNodeAnalysisContext context)
         {
             var typeParameterConstraint = (TypeParameterConstraintClauseSyntax)context.Node;
 
@@ -197,15 +273,13 @@
             switch (unaryExpression.OperatorToken.Kind())
             {
             case SyntaxKind.PlusToken:
-                analyze = context.IsAnalyzerSuppressed(SA1022PositiveSignsMustBeSpacedCorrectly.DiagnosticId);
-                break;
             case SyntaxKind.MinusToken:
-                analyze = context.IsAnalyzerSuppressed(SA1021NegativeSignsMustBeSpacedCorrectly.DiagnosticId);
-                break;
             case SyntaxKind.PlusPlusToken:
             case SyntaxKind.MinusMinusToken:
-                analyze = context.IsAnalyzerSuppressed(SA1020IncrementDecrementSymbolsMustBeSpacedCorrectly.DiagnosticId);
+                // These expressions are handled by SA1020, SA1021, SA1022
+                analyze = false;
                 break;
+
             default:
                 analyze = true;
                 break;
@@ -213,7 +287,7 @@
 
             if (analyze)
             {
-                if (followingTrivia.Any(t => t.IsKind(SyntaxKind.SingleLineCommentTrivia)) || followingTrivia.Any(t => t.IsKind(SyntaxKind.MultiLineCommentTrivia)))
+                if (followingTrivia.Any(SyntaxKind.SingleLineCommentTrivia) || followingTrivia.Any(SyntaxKind.MultiLineCommentTrivia))
                 {
                     context.ReportDiagnostic(Diagnostic.Create(DescriptorNotFollowedByComment, unaryExpression.OperatorToken.GetLocation(), unaryExpression.OperatorToken.Text));
                 }
@@ -235,7 +309,11 @@
                 && !followingToken.IsKind(SyntaxKind.CommaToken)
                 && !(followingToken.IsKind(SyntaxKind.CloseBraceToken) && (followingToken.Parent is InterpolationSyntax));
 
-            CheckToken(context, unaryExpression.OperatorToken, false, false, mustHaveTrailingWhitespace);
+            // If the next token is a close brace token we are in an anonymous object creation or an initialization.
+            // Then we allow a new line
+            bool allowEndOfLine = followingToken.IsKind(SyntaxKind.CloseBraceToken);
+
+            CheckToken(context, unaryExpression.OperatorToken, false, allowEndOfLine, mustHaveTrailingWhitespace);
         }
 
         private static void HandleAssignmentExpression(SyntaxNodeAnalysisContext context)
@@ -275,8 +353,48 @@
             CheckToken(context, lambdaExpression.ArrowToken, true, true, true);
         }
 
+        private static void HandlePropertyDeclaration(SyntaxNodeAnalysisContext context)
+        {
+            var propertyDeclaration = (PropertyDeclarationSyntax)context.Node;
+            HandleArrowExpressionClause(context, propertyDeclaration.ExpressionBody);
+        }
+
+        private static void HandleIndexerDeclaration(SyntaxNodeAnalysisContext context)
+        {
+            var indexerDeclaration = (IndexerDeclarationSyntax)context.Node;
+            HandleArrowExpressionClause(context, indexerDeclaration.ExpressionBody);
+        }
+
+        private static void HandleMethodDeclaration(SyntaxNodeAnalysisContext context)
+        {
+            var methodDeclaration = (MethodDeclarationSyntax)context.Node;
+            HandleArrowExpressionClause(context, methodDeclaration.ExpressionBody);
+        }
+
+        private static void HandleOperatorDeclaration(SyntaxNodeAnalysisContext context)
+        {
+            var operatorDeclaration = (OperatorDeclarationSyntax)context.Node;
+            HandleArrowExpressionClause(context, operatorDeclaration.ExpressionBody);
+        }
+
+        private static void HandleConversionOperatorDeclaration(SyntaxNodeAnalysisContext context)
+        {
+            var conversionOperatorDeclaration = (ConversionOperatorDeclarationSyntax)context.Node;
+            HandleArrowExpressionClause(context, conversionOperatorDeclaration.ExpressionBody);
+        }
+
+        private static void HandleArrowExpressionClause(SyntaxNodeAnalysisContext context, ArrowExpressionClauseSyntax arrowExpressionClause)
+        {
+            if (arrowExpressionClause != null)
+            {
+                CheckToken(context, arrowExpressionClause.ArrowToken, true, true, true);
+            }
+        }
+
         private static void CheckToken(SyntaxNodeAnalysisContext context, SyntaxToken token, bool withLeadingWhitespace, bool allowAtEndOfLine, bool withTrailingWhitespace, string tokenText = null)
         {
+            tokenText = tokenText ?? token.Text;
+
             var precedingToken = token.GetPreviousToken();
             var precedingTriviaList = TriviaHelper.MergeTriviaLists(precedingToken.TrailingTrivia, token.LeadingTrivia);
 
@@ -291,7 +409,7 @@
                 {
                     var properties = ImmutableDictionary.Create<string, string>()
                         .Add(CodeFixAction, InsertBeforeTag);
-                    context.ReportDiagnostic(Diagnostic.Create(DescriptorPrecededByWhitespace, token.GetLocation(), properties, tokenText ?? token.Text));
+                    context.ReportDiagnostic(Diagnostic.Create(DescriptorPrecededByWhitespace, token.GetLocation(), properties, tokenText));
                 }
             }
             else
@@ -302,7 +420,7 @@
                 {
                     var properties = ImmutableDictionary.Create<string, string>()
                         .Add(CodeFixAction, RemoveBeforeTag);
-                    context.ReportDiagnostic(Diagnostic.Create(DescriptorNotPrecededByWhitespace, token.GetLocation(), properties, tokenText ?? token.Text));
+                    context.ReportDiagnostic(Diagnostic.Create(DescriptorNotPrecededByWhitespace, token.GetLocation(), properties, tokenText));
                 }
             }
 
@@ -316,7 +434,7 @@
                     properties = properties.Add(CodeFixAction, withTrailingWhitespace ? RemoveEndOfLineWithTrailingSpaceTag : RemoveEndOfLineTag);
                 }
 
-                context.ReportDiagnostic(Diagnostic.Create(DescriptorNotAtEndOfLine, token.GetLocation(), properties, tokenText ?? token.Text));
+                context.ReportDiagnostic(Diagnostic.Create(DescriptorNotAtEndOfLine, token.GetLocation(), properties, tokenText));
                 return;
             }
 
@@ -326,7 +444,7 @@
                 {
                     var properties = ImmutableDictionary.Create<string, string>()
                         .Add(CodeFixAction, InsertAfterTag);
-                    context.ReportDiagnostic(Diagnostic.Create(DescriptorFollowedByWhitespace, token.GetLocation(), properties, tokenText ?? token.Text));
+                    context.ReportDiagnostic(Diagnostic.Create(DescriptorFollowedByWhitespace, token.GetLocation(), properties, tokenText));
                 }
             }
             else
@@ -335,7 +453,7 @@
                 {
                     var properties = ImmutableDictionary.Create<string, string>()
                         .Add(CodeFixAction, RemoveAfterTag);
-                    context.ReportDiagnostic(Diagnostic.Create(DescriptorNotFollowedByWhitespace, token.GetLocation(), properties, tokenText ?? token.Text));
+                    context.ReportDiagnostic(Diagnostic.Create(DescriptorNotFollowedByWhitespace, token.GetLocation(), properties, tokenText));
                 }
             }
         }

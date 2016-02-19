@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.SpacingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.SpacingRules
 {
     using System.Collections.Generic;
     using System.Text;
@@ -192,7 +195,7 @@
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
-        public async Task TrailingWhitespaceAfterClosingBraceAsync()
+        public async Task TestTrailingWhitespaceAfterClosingBraceAsync()
         {
             string testCode = new StringBuilder()
                 .AppendLine("class ClassName")
@@ -211,6 +214,24 @@
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// This is a regression test for DotNetAnalyzers/StyleCopAnalyzers#1445 "SA1028 falsely reports when
+        /// <c>[assembly: InternalsVisibleTo("...")]</c> is used at the end of file":
+        /// https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/1445
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestWhitespaceBeforeClosingBraceAsync()
+        {
+            string testCode = new StringBuilder()
+                .AppendLine("class ClassName")
+                .AppendLine("{")
+                .Append(" }")
+                .ToString();
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }
 
         [Fact]
@@ -258,9 +279,7 @@
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
-
-            // We don't have code fixes available for directives yet.
-            ////await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
         }
 
         [Fact]
@@ -310,11 +329,51 @@
             await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Verifies that trailing whitespace after a multi-line documentation comment is handled properly.
+        /// This is a regression test for #821
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task VerifyTrailingWhitespaceInsideMultiLineXmlDocumentationCommentAsync()
+        {
+            string testCode = new StringBuilder()
+                .AppendLine("/**")
+                .AppendLine(" * <summary>  ")
+                .AppendLine(" * Some description    ")
+                .AppendLine(" * </summary>  ")
+                .AppendLine(" */")
+                .AppendLine("class Foo { }")
+                .ToString();
+
+            string fixedCode = new StringBuilder()
+                .AppendLine("/**")
+                .AppendLine(" * <summary>")
+                .AppendLine(" * Some description")
+                .AppendLine(" * </summary>")
+                .AppendLine(" */")
+                .AppendLine("class Foo { }")
+                .ToString();
+
+            DiagnosticResult[] expected =
+            {
+                this.CSharpDiagnostic().WithLocation(2, 13),
+                this.CSharpDiagnostic().WithLocation(3, 20),
+                this.CSharpDiagnostic().WithLocation(4, 14)
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()
         {
             yield return new SA1028CodeMustNotContainTrailingWhitespace();
         }
 
+        /// <inheritdoc/>
         protected override CodeFixProvider GetCSharpCodeFixProvider()
         {
             return new SA1028CodeFixProvider();

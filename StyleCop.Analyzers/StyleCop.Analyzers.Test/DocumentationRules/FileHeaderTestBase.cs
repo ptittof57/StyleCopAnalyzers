@@ -1,11 +1,12 @@
-﻿namespace StyleCop.Analyzers.Test.DocumentationRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.DocumentationRules
 {
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Analyzers.DocumentationRules;
-    using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.Diagnostics;
     using TestHelper;
     using Xunit;
@@ -13,9 +14,8 @@
     /// <summary>
     /// Base class for file header related unit tests.
     /// </summary>
-    public abstract class FileHeaderTestBase : DiagnosticVerifier
+    public abstract class FileHeaderTestBase : CodeFixVerifier
     {
-        private const string SettingsFileName = "stylecop.json";
         private const string TestSettings = @"
 {
   ""settings"": {

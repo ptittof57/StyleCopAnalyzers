@@ -62,6 +62,15 @@ namespace StyleCop.Analyzers.ReadabilityRules {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Remove region.
+        /// </summary>
+        internal static string RemoveRegionCodeFix {
+            get {
+                return ResourceManager.GetString("RemoveRegionCodeFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Replace &apos;base.&apos; with &apos;this.&apos;.
         /// </summary>
         internal static string SA1100CodeFix {
@@ -278,6 +287,15 @@ namespace StyleCop.Analyzers.ReadabilityRules {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Remove empty statement.
+        /// </summary>
+        internal static string SA1106CodeFix {
+            get {
+                return ResourceManager.GetString("SA1106CodeFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The C# code contains an extra semicolon..
         /// </summary>
         internal static string SA1106Description {
@@ -341,7 +359,7 @@ namespace StyleCop.Analyzers.ReadabilityRules {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A C# statement contains a comment between the declaration of the statement and the opening curly bracket of the statement..
+        ///   Looks up a localized string similar to A C# statement contains a comment between the declaration of the statement and the opening brace of the statement..
         /// </summary>
         internal static string SA1108Description {
             get {
@@ -368,7 +386,7 @@ namespace StyleCop.Analyzers.ReadabilityRules {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A C# statement contains a region tag between the declaration of the statement and the opening curly bracket of the statement..
+        ///   Looks up a localized string similar to A C# statement contains a region tag between the declaration of the statement and the opening brace of the statement..
         /// </summary>
         internal static string SA1109Description {
             get {
@@ -602,7 +620,7 @@ namespace StyleCop.Analyzers.ReadabilityRules {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
+        ///   Looks up a localized string similar to The parameters must all be placed on the same line or each parameter must be placed on its own line..
         /// </summary>
         internal static string SA1117MessageFormat {
             get {
@@ -895,6 +913,285 @@ namespace StyleCop.Analyzers.ReadabilityRules {
         internal static string SA1127Title {
             get {
                 return ResourceManager.GetString("SA1127Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Place constructor initializer on own line.
+        /// </summary>
+        internal static string SA1128CodeFix {
+            get {
+                return ResourceManager.GetString("SA1128CodeFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A constructor initializer, including the colon character, should be on its own line..
+        /// </summary>
+        internal static string SA1128Description {
+            get {
+                return ResourceManager.GetString("SA1128Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Put constructor initializers on their own line.
+        /// </summary>
+        internal static string SA1128MessageFormat {
+            get {
+                return ResourceManager.GetString("SA1128MessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Put constructor initializers on their own line.
+        /// </summary>
+        internal static string SA1128Title {
+            get {
+                return ResourceManager.GetString("SA1128Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Replace with default(T).
+        /// </summary>
+        internal static string SA1129CodeFix {
+            get {
+                return ResourceManager.GetString("SA1129CodeFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to When creating a new instance of a value type T, the syntax &apos;default(T)&apos; is functionally equivalent to the syntax &apos;new T()&apos;. To avoid confusion regarding the behavior of the resulting instance, the first form is preferred..
+        /// </summary>
+        internal static string SA1129Description {
+            get {
+                return ResourceManager.GetString("SA1129Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not use default value type constructor.
+        /// </summary>
+        internal static string SA1129MessageFormat {
+            get {
+                return ResourceManager.GetString("SA1129MessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not use default value type constructor.
+        /// </summary>
+        internal static string SA1129Title {
+            get {
+                return ResourceManager.GetString("SA1129Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Lambda expressions are more succinct and easier to read than anonymous methods, so they should are preferred whenever the two are functionally equivalent..
+        /// </summary>
+        internal static string SA1130Description {
+            get {
+                return ResourceManager.GetString("SA1130Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use lambda syntax.
+        /// </summary>
+        internal static string SA1130MessageFormat {
+            get {
+                return ResourceManager.GetString("SA1130MessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use lambda syntax.
+        /// </summary>
+        internal static string SA1130Title {
+            get {
+                return ResourceManager.GetString("SA1130Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Swap operands.
+        /// </summary>
+        internal static string SA1131CodeFix {
+            get {
+                return ResourceManager.GetString("SA1131CodeFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to When a comparison is made between a variable and a literal, the variable should be placed on the left-hand-side to maximize readability..
+        /// </summary>
+        internal static string SA1131Description {
+            get {
+                return ResourceManager.GetString("SA1131Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Constant values should appear on the right-hand side of comparisons.
+        /// </summary>
+        internal static string SA1131MessageFormat {
+            get {
+                return ResourceManager.GetString("SA1131MessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use readable conditions.
+        /// </summary>
+        internal static string SA1131Title {
+            get {
+                return ResourceManager.GetString("SA1131Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Place each field on a new line.
+        /// </summary>
+        internal static string SA1132CodeFix {
+            get {
+                return ResourceManager.GetString("SA1132CodeFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Each field should be declared on its own line, in order to clearly see each field of a type and allow for proper documentation of the behavior of each field..
+        /// </summary>
+        internal static string SA1132Description {
+            get {
+                return ResourceManager.GetString("SA1132Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Each field should be declared on its own line.
+        /// </summary>
+        internal static string SA1132MessageFormat {
+            get {
+                return ResourceManager.GetString("SA1132MessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not combine fields.
+        /// </summary>
+        internal static string SA1132Title {
+            get {
+                return ResourceManager.GetString("SA1132Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Give each attribute its own square brackets.
+        /// </summary>
+        internal static string SA1133CodeFix {
+            get {
+                return ResourceManager.GetString("SA1133CodeFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Each attribute usage should be placed in its own set of square brackets for maximum readability..
+        /// </summary>
+        internal static string SA1133Description {
+            get {
+                return ResourceManager.GetString("SA1133Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Each attribute should be placed in its own set of square brackets..
+        /// </summary>
+        internal static string SA1133MessageFormat {
+            get {
+                return ResourceManager.GetString("SA1133MessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not combine attributes.
+        /// </summary>
+        internal static string SA1133Title {
+            get {
+                return ResourceManager.GetString("SA1133Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Place attribute on own line..
+        /// </summary>
+        internal static string SA1134CodeFix {
+            get {
+                return ResourceManager.GetString("SA1134CodeFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Each attribute should be placed on its own line of code..
+        /// </summary>
+        internal static string SA1134Description {
+            get {
+                return ResourceManager.GetString("SA1134Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Each attribute should be placed on its own line of code..
+        /// </summary>
+        internal static string SA1134MessageFormat {
+            get {
+                return ResourceManager.GetString("SA1134MessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Attributes must not share line.
+        /// </summary>
+        internal static string SA1134Title {
+            get {
+                return ResourceManager.GetString("SA1134Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Remove &apos;this.&apos; prefix.
+        /// </summary>
+        internal static string SX1101CodeFix {
+            get {
+                return ResourceManager.GetString("SX1101CodeFix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to A call to an instance member of the local class or a base class is prefixed with `this.`..
+        /// </summary>
+        internal static string SX1101Description {
+            get {
+                return ResourceManager.GetString("SX1101Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not prefix local calls with &apos;this.&apos;.
+        /// </summary>
+        internal static string SX1101MessageFormat {
+            get {
+                return ResourceManager.GetString("SX1101MessageFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do not prefix local calls with &apos;this.&apos;.
+        /// </summary>
+        internal static string SX1101Title {
+            get {
+                return ResourceManager.GetString("SX1101Title", resourceCulture);
             }
         }
     }

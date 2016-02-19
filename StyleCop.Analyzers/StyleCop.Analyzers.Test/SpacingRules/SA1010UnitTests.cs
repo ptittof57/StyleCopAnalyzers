@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.SpacingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.SpacingRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -138,17 +141,82 @@ public class Foo
 
             DiagnosticResult[] expected =
             {
-                this.CSharpDiagnostic().WithLocation(5, 21).WithArguments("neither preceded nor followed"),
-                this.CSharpDiagnostic().WithLocation(9, 17).WithArguments("neither preceded nor followed"),
-                this.CSharpDiagnostic().WithLocation(9, 21).WithArguments("neither preceded nor followed"),
-                this.CSharpDiagnostic().WithLocation(9, 40).WithArguments("neither preceded nor followed"),
-                this.CSharpDiagnostic().WithLocation(12, 27).WithArguments("neither preceded nor followed"),
-                this.CSharpDiagnostic().WithLocation(15, 25).WithArguments("neither preceded nor followed"),
-                this.CSharpDiagnostic().WithLocation(15, 30).WithArguments("neither preceded nor followed"),
+                this.CSharpDiagnostic().WithLocation(5, 21).WithArguments("not be preceded"),
+                this.CSharpDiagnostic().WithLocation(5, 21).WithArguments("not be followed"),
+                this.CSharpDiagnostic().WithLocation(9, 17).WithArguments("not be preceded"),
+                this.CSharpDiagnostic().WithLocation(9, 17).WithArguments("not be followed"),
+                this.CSharpDiagnostic().WithLocation(9, 21).WithArguments("not be preceded"),
+                this.CSharpDiagnostic().WithLocation(9, 21).WithArguments("not be followed"),
+                this.CSharpDiagnostic().WithLocation(9, 40).WithArguments("not be preceded"),
+                this.CSharpDiagnostic().WithLocation(9, 40).WithArguments("not be followed"),
+                this.CSharpDiagnostic().WithLocation(12, 27).WithArguments("not be preceded"),
+                this.CSharpDiagnostic().WithLocation(12, 27).WithArguments("not be followed"),
+                this.CSharpDiagnostic().WithLocation(15, 25).WithArguments("not be preceded"),
+                this.CSharpDiagnostic().WithLocation(15, 25).WithArguments("not be followed"),
+                this.CSharpDiagnostic().WithLocation(15, 30).WithArguments("not be preceded"),
+                this.CSharpDiagnostic().WithLocation(15, 30).WithArguments("not be followed"),
             };
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpFixAsync(testCode, ExpectedCode).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verify that index initializers are properly handled.
+        /// Regression test for https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/1617
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task VerifyIndexInitializerAsync()
+        {
+            var testCode = @"using System.Collections.Generic;
+
+public class TestClass
+{
+    public void TestMethod(IDictionary<ulong, string> items)
+    {
+        var test = new Dictionary<ulong, string>(items) { [100] = ""100"" };
+    }
+}
+";
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verify that index initializer scope determination is working as intended.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task VerifyThatIndexInitializerScopeIsDeterminedProperlyAsync()
+        {
+            var testCode = @"using System.Collections.Generic;
+
+public class TestClass
+{
+    public void TestMethod(IDictionary<ulong, string> items)
+    {
+        int[] indexes = { 0 };
+        var dictionary = new Dictionary<int, int> { [indexes [0]] = 0 };
+    }
+}
+";
+
+            var fixedTestCode = @"using System.Collections.Generic;
+
+public class TestClass
+{
+    public void TestMethod(IDictionary<ulong, string> items)
+    {
+        int[] indexes = { 0 };
+        var dictionary = new Dictionary<int, int> { [indexes[0]] = 0 };
+    }
+}
+";
+            var expected = this.CSharpDiagnostic().WithLocation(8, 62).WithArguments("not be preceded");
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedTestCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedTestCode).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -160,7 +228,7 @@ public class Foo
         /// <inheritdoc/>
         protected override CodeFixProvider GetCSharpCodeFixProvider()
         {
-            return new SA1010CodeFixProvider();
+            return new TokenSpacingCodeFixProvider();
         }
     }
 }

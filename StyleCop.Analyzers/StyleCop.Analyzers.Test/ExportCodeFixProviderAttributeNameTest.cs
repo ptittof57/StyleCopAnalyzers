@@ -1,12 +1,15 @@
-﻿namespace StyleCop.Analyzers.Test
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
+    using Analyzers.SpacingRules;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CodeFixes;
-    using StyleCop.Analyzers.ReadabilityRules;
     using Xunit;
 
     public class ExportCodeFixProviderAttributeNameTest
@@ -15,7 +18,7 @@
         {
             get
             {
-                var codeFixProviders = typeof(SA1110OpeningParenthesisMustBeOnDeclarationLine)
+                var codeFixProviders = typeof(TokenSpacingCodeFixProvider)
                     .Assembly
                     .GetTypes()
                     .Where(t => typeof(CodeFixProvider).IsAssignableFrom(t));
@@ -29,6 +32,14 @@
         public void TestExportCodeFixProviderAttribute(Type codeFixProvider)
         {
             var exportCodeFixProviderAttribute = codeFixProvider.GetCustomAttributes<ExportCodeFixProviderAttribute>(false).FirstOrDefault();
+            var noCodeFixAttribute = codeFixProvider.GetCustomAttributes<NoCodeFixAttribute>(false).FirstOrDefault();
+
+            if (noCodeFixAttribute != null)
+            {
+                Assert.Null(exportCodeFixProviderAttribute);
+
+                return;
+            }
 
             Assert.NotNull(exportCodeFixProviderAttribute);
             Assert.Equal(codeFixProvider.Name, exportCodeFixProviderAttribute.Name);

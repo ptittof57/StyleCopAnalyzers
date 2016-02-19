@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.ReadabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.ReadabilityRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -1137,18 +1140,8 @@ using System.Diagnostics;
 public class FooAttribute : System.Attribute
 {
 }";
-            var fixedCode = @"
-using System.Diagnostics;
-[Conditional(""DEBUG""), Conditional(""TEST1"")]
-public class FooAttribute : System.Attribute
-{
-}";
 
-            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(4, 1);
-
-            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
-            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
-            await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }
 
         [Fact]
@@ -1524,14 +1517,144 @@ public class TestClass
             await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Verifies that valid operator declarations will not raise diagnostics.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task VerifyValidOperatorDeclarationsAsync()
+        {
+            var testCode = @"
+public class TestClass
+{
+    public static TestClass operator +(TestClass value1, TestClass value2)
+    {
+        return new TestClass();
+    }
+
+    public static TestClass operator +(TestClass value)
+    {
+        return new TestClass();
+    }
+
+    public static explicit operator TestClass(int value)
+    {
+        return new TestClass();
+    }
+}";
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that an unary operator declaration with its closing parenthesis on a different line as the last parameter will produce the expected diagnostics.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task VerifyUnaryOperatorDeclarationWithClosingParanthesisOnNextLineAsync()
+        {
+            var testCode = @"
+public class TestClass
+{
+    public static TestClass operator +(TestClass value
+)
+    {
+        return new TestClass();
+    }
+}";
+
+            var fixedCode = @"
+public class TestClass
+{
+    public static TestClass operator +(TestClass value)
+    {
+        return new TestClass();
+    }
+}";
+
+            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(5, 1);
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that a binary operator declaration with its closing parenthesis on a different line as the last parameter will produce the expected diagnostics.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task VerifyBinaryOperatorDeclarationWithClosingParanthesisOnNextLineAsync()
+        {
+            var testCode = @"
+public class TestClass
+{
+    public static TestClass operator +(TestClass value1, TestClass value2
+)
+    {
+        return new TestClass();
+    }
+}";
+
+            var fixedCode = @"
+public class TestClass
+{
+    public static TestClass operator +(TestClass value1, TestClass value2)
+    {
+        return new TestClass();
+    }
+}";
+
+            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(5, 1);
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that a conversion operator declaration with its closing parenthesis on a different line as the last parameter will produce the expected diagnostics.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task VerifyConversionOperatorDeclarationWithClosingParanthesisOnNextLineAsync()
+        {
+            var testCode = @"
+public class TestClass
+{
+    public static explicit operator TestClass(int value
+)
+    {
+        return new TestClass();
+    }
+}";
+
+            var fixedCode = @"
+public class TestClass
+{
+    public static explicit operator TestClass(int value)
+    {
+        return new TestClass();
+    }
+}";
+
+            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(5, 1);
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()
         {
             yield return new SA1111ClosingParenthesisMustBeOnLineOfLastParameter();
         }
 
+        /// <inheritdoc/>
         protected override CodeFixProvider GetCSharpCodeFixProvider()
         {
-            return new OpenCloseSpacingCodeFixProvider();
+            return new TokenSpacingCodeFixProvider();
         }
     }
 }

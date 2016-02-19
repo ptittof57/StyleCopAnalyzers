@@ -1,7 +1,15 @@
-﻿namespace StyleCop.Analyzers.DocumentationRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.DocumentationRules
 {
+    using System;
     using System.Collections.Immutable;
+    using System.Linq;
+    using Helpers;
     using Microsoft.CodeAnalysis;
+    using Microsoft.CodeAnalysis.CSharp;
+    using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Diagnostics;
 
     /// <summary>
@@ -21,7 +29,8 @@
     /// /// &lt;summary&gt;
     /// /// Joins a first name and a last name together into a single string.
     /// /// &lt;/summary&gt;
-    /// /// &lt;param name="firstName"&gt; &lt;/param&gt;
+    /// /// &lt;remarks&gt;&lt;/remarks&gt;
+    /// /// &lt;param name="firstName"&gt;Other part of name.&lt;/param&gt;
     /// /// &lt;param name="lastName"&gt;Part of the name.&lt;/param&gt;
     /// /// &lt;returns&gt;The joined names.&lt;/returns&gt;
     /// public string JoinNames(string firstName, string lastName)
@@ -32,36 +41,67 @@
     /// </remarks>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     [NoCodeFix("Cannot generate documentation")]
-    public class SA1627DocumentationTextMustNotBeEmpty : DiagnosticAnalyzer
+    internal class SA1627DocumentationTextMustNotBeEmpty : DiagnosticAnalyzer
     {
         /// <summary>
         /// The ID for diagnostics produced by the <see cref="SA1627DocumentationTextMustNotBeEmpty"/> analyzer.
         /// </summary>
         public const string DiagnosticId = "SA1627";
-        private const string Title = "Documentation text must not be empty";
-        private const string MessageFormat = "TODO: Message format";
-        private const string Description = "The XML header documentation for a C# code element contains an empty tag.";
-        private const string HelpLink = "https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1627.md";
+        private static readonly LocalizableString Title = new LocalizableResourceString(nameof(DocumentationResources.SA1627Title), DocumentationResources.ResourceManager, typeof(DocumentationResources));
+        private static readonly LocalizableString MessageFormat = new LocalizableResourceString(nameof(DocumentationResources.SA1627MessageFormat), DocumentationResources.ResourceManager, typeof(DocumentationResources));
+        private static readonly LocalizableString Description = new LocalizableResourceString(nameof(DocumentationResources.SA1627Description), DocumentationResources.ResourceManager, typeof(DocumentationResources));
+        private static readonly string HelpLink = "https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1627.md";
 
         private static readonly DiagnosticDescriptor Descriptor =
-            new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, AnalyzerCategory.DocumentationRules, DiagnosticSeverity.Warning, AnalyzerConstants.DisabledNoTests, Description, HelpLink);
+            new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, AnalyzerCategory.DocumentationRules, DiagnosticSeverity.Warning, AnalyzerConstants.EnabledByDefault, Description, HelpLink);
 
-        private static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsValue =
-            ImmutableArray.Create(Descriptor);
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
+        private static readonly Action<SyntaxNodeAnalysisContext> XmlElementAction = HandleXmlElement;
+        private static readonly Action<SyntaxNodeAnalysisContext> XmlEmptyElementAction = HandleXmlEmptyElement;
+
+        private static readonly ImmutableArray<string> ElementsToCheck =
+            ImmutableArray.Create(
+                XmlCommentHelper.RemarksXmlTag,
+                XmlCommentHelper.PermissionXmlTag,
+                XmlCommentHelper.ExceptionXmlTag,
+                XmlCommentHelper.ExampleXmlTag);
 
         /// <inheritdoc/>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        {
-            get
-            {
-                return SupportedDiagnosticsValue;
-            }
-        }
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
+            ImmutableArray.Create(Descriptor);
 
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            // TODO: Implement analysis
+            context.RegisterCompilationStartAction(CompilationStartAction);
+        }
+
+        private static void HandleCompilationStart(CompilationStartAnalysisContext context)
+        {
+            context.RegisterSyntaxNodeActionHonorExclusions(XmlElementAction, SyntaxKind.XmlElement);
+            context.RegisterSyntaxNodeActionHonorExclusions(XmlEmptyElementAction, SyntaxKind.XmlEmptyElement);
+        }
+
+        private static void HandleXmlElement(SyntaxNodeAnalysisContext context)
+        {
+            var element = (XmlElementSyntax)context.Node;
+
+            var name = element.StartTag?.Name;
+
+            if (ElementsToCheck.Contains(name.ToString()) && XmlCommentHelper.IsConsideredEmpty(element))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Descriptor, element.GetLocation(), name.ToString()));
+            }
+        }
+
+        private static void HandleXmlEmptyElement(SyntaxNodeAnalysisContext context)
+        {
+            var element = (XmlEmptyElementSyntax)context.Node;
+
+            if (ElementsToCheck.Contains(element.Name.ToString()))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Descriptor, element.GetLocation(), element.Name.ToString()));
+            }
         }
     }
 }

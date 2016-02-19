@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.OrderingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.OrderingRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -10,7 +13,7 @@
     using Xunit;
 
     /// <summary>
-    /// Unit tests for <see cref="SA1215InstanceReadonlyElementsMustAppearBeforeInstanceNonReadonlyElements"/>.
+    /// Unit tests for <see cref="SA1214ReadonlyElementsMustAppearBeforeNonReadonlyElements"/>.
     /// </summary>
     public class SA1215UnitTests : CodeFixVerifier
     {
@@ -117,7 +120,7 @@
 }
 ";
 
-            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(4, 25).WithArguments("public");
+            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(4, 25);
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
 
@@ -145,7 +148,7 @@
 }
 ";
 
-            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(4, 25).WithArguments("public");
+            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(4, 25);
 
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
 
@@ -196,12 +199,12 @@
         /// <inheritdoc/>
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()
         {
-            yield return new SA1215InstanceReadonlyElementsMustAppearBeforeInstanceNonReadonlyElements();
+            yield return new SA1214ReadonlyElementsMustAppearBeforeNonReadonlyElements();
         }
 
         protected override CodeFixProvider GetCSharpCodeFixProvider()
         {
-            return new SA1203SA1214SA1215CodeFixProvider();
+            return new ElementOrderCodeFixProvider();
         }
     }
 }

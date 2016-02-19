@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.NamingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.NamingRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -72,6 +75,50 @@
             var fixedCode = @"public class Foo
 {
     internal readonly string Bar = ""baz"";
+}";
+            await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestInternalReadonlyFieldStartingWithLowerCaseWithConflictAsync()
+        {
+            var testCode = @"public class Foo
+{
+    internal readonly string bar = ""baz"";
+    public string Bar => this.bar;
+}";
+
+            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(3, 30);
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+
+            var fixedCode = @"public class Foo
+{
+    internal readonly string BarValue = ""baz"";
+    public string Bar => this.BarValue;
+}";
+            await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestInternalReadonlyFieldStartingWithLowerCaseWithTwoConflictsAsync()
+        {
+            var testCode = @"public class Foo
+{
+    internal readonly string bar = ""baz"";
+    public string Bar => this.bar;
+    public string BarValue => this.bar;
+}";
+
+            DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(3, 30);
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+
+            var fixedCode = @"public class Foo
+{
+    internal readonly string Bar1 = ""baz"";
+    public string Bar => this.Bar1;
+    public string BarValue => this.Bar1;
 }";
             await this.VerifyCSharpFixAsync(testCode, fixedCode).ConfigureAwait(false);
         }

@@ -1,5 +1,10 @@
-﻿namespace StyleCop.Analyzers.DocumentationRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.DocumentationRules
 {
+    using System;
+    using System.Collections.Immutable;
     using System.Linq;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
@@ -11,12 +16,23 @@
     /// This is the base class for analyzers which examine the <c>&lt;summary&gt;</c> or <c>&lt;content&gt;</c> text of
     /// the documentation comment associated with a <c>partial</c> element.
     /// </summary>
-    public abstract class PartialElementDocumentationSummaryBase : DiagnosticAnalyzer
+    internal abstract class PartialElementDocumentationSummaryBase : DiagnosticAnalyzer
     {
+        private readonly Action<CompilationStartAnalysisContext> compilationStartAction;
+        private readonly Action<SyntaxNodeAnalysisContext> typeDeclarationAction;
+        private readonly Action<SyntaxNodeAnalysisContext> methodDeclarationAction;
+
+        protected PartialElementDocumentationSummaryBase()
+        {
+            this.compilationStartAction = this.HandleCompilationStart;
+            this.typeDeclarationAction = this.HandleTypeDeclaration;
+            this.methodDeclarationAction = this.HandleMethodDeclaration;
+        }
+
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterCompilationStartAction(this.HandleCompilationStart);
+            context.RegisterCompilationStartAction(this.compilationStartAction);
         }
 
         /// <summary>
@@ -30,15 +46,15 @@
 
         private void HandleCompilationStart(CompilationStartAnalysisContext context)
         {
-            context.RegisterSyntaxNodeActionHonorExclusions(this.HandleTypeDeclaration, SyntaxKind.ClassDeclaration);
-            context.RegisterSyntaxNodeActionHonorExclusions(this.HandleTypeDeclaration, SyntaxKind.StructDeclaration);
-            context.RegisterSyntaxNodeActionHonorExclusions(this.HandleTypeDeclaration, SyntaxKind.InterfaceDeclaration);
-            context.RegisterSyntaxNodeActionHonorExclusions(this.HandleMethodDeclaration, SyntaxKind.MethodDeclaration);
+            context.RegisterSyntaxNodeActionHonorExclusions(this.typeDeclarationAction, SyntaxKinds.TypeDeclaration);
+            context.RegisterSyntaxNodeActionHonorExclusions(this.methodDeclarationAction, SyntaxKind.MethodDeclaration);
         }
 
         private void HandleTypeDeclaration(SyntaxNodeAnalysisContext context)
         {
-            var node = (BaseTypeDeclarationSyntax)context.Node;
+            // We handle TypeDeclarationSyntax instead of BaseTypeDeclarationSyntax because enums are not allowed to be
+            // partial.
+            var node = (TypeDeclarationSyntax)context.Node;
             if (node.Identifier.IsMissing)
             {
                 return;

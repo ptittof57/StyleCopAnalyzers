@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.DocumentationRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.DocumentationRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -77,6 +80,7 @@
             return new SA1642SA1643CodeFixProvider();
         }
 
+        [Fact]
         private async Task TestEmptyDestructorAsync()
         {
             var testCode = @"namespace FooNamespace
@@ -179,9 +183,7 @@
 
             DiagnosticResult expected = this.CSharpDiagnostic().WithLocation(5, 13);
 
-            await this.VerifyCSharpDiagnosticAsync(
-                testCode,
-                expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
 
             var fixedCode = @"namespace FooNamespace
 {{

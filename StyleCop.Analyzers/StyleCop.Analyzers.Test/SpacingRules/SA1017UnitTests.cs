@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.SpacingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.SpacingRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -97,7 +100,7 @@ class ClassName2
 {
 }
 
-[System.Obsolete/*comment*/]
+[System.Obsolete /*comment*/]
 class ClassNam3
 {
 }
@@ -132,14 +135,14 @@ class ClassName
             {
                 new DiagnosticResult()
                 {
-                    Id = "CS1003",
-                    Message = "Syntax error, ',' expected",
+                    Id = "CS0443",
+                    Message = "Syntax error; value expected",
                     Severity = DiagnosticSeverity.Error,
                 },
                 new DiagnosticResult()
                 {
-                    Id = "CS0443",
-                    Message = "Syntax error; value expected",
+                    Id = "CS1003",
+                    Message = "Syntax error, ',' expected",
                     Severity = DiagnosticSeverity.Error,
                 },
                 new DiagnosticResult()
@@ -167,7 +170,7 @@ class ClassName
         /// <inheritdoc/>
         protected override CodeFixProvider GetCSharpCodeFixProvider()
         {
-            return new SA1017CodeFixProvider();
+            return new TokenSpacingCodeFixProvider();
         }
     }
 }

@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.MaintainabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.MaintainabilityRules
 {
     using System.Collections.Generic;
     using System.Collections.Immutable;
@@ -83,12 +86,17 @@
                 Location.Create(await document.GetSyntaxTreeAsync().ConfigureAwait(false), TextSpan.FromBounds(0, 0)),
                 properties);
 
-            await codeFixer.RegisterCodeFixesAsync(new CodeFixContext(document, diagnostic, (ca, d) =>
-            {
-                var operation = ca.GetOperationsAsync(CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult()[0];
+            await codeFixer.RegisterCodeFixesAsync(
+                new CodeFixContext(
+                    document,
+                    diagnostic,
+                    (ca, d) =>
+                    {
+                        var operation = ca.GetOperationsAsync(CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult()[0];
 
-                operation.Apply(workspace, CancellationToken.None);
-            }, CancellationToken.None)).ConfigureAwait(false);
+                        operation.Apply(workspace, CancellationToken.None);
+                    },
+                    CancellationToken.None)).ConfigureAwait(false);
 
             // project should now have the "fixed document" in it.
             // Because of limitations in Roslyn the fixed document should
@@ -123,7 +131,7 @@
             return new SA1412CodeFixProvider();
         }
 
-        protected override Project CreateProject(string[] sources, string language = "C#", string[] filenames = null)
+        protected override Project CreateProjectImpl(string[] sources, string language, string[] filenames)
         {
             string fileNamePrefix = "Test";
             string fileExt = "cs";

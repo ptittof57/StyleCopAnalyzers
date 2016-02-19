@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Helpers
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Helpers
 {
     using System;
     using System.Collections;
@@ -18,8 +21,10 @@
         /// <param name="triviaList">The trivia list to process.</param>
         /// <param name="endOfLineIsWhitespace"><see langword="true"/> to treat <see cref="SyntaxKind.EndOfLineTrivia"/>
         /// as whitespace; otherwise, <see langword="false"/>.</param>
+        /// <typeparam name="T">The type of the trivia list.</typeparam>
         /// <returns>The index where the non-whitespace starts, or -1 if there is no non-whitespace trivia.</returns>
-        internal static int IndexOfFirstNonWhitespaceTrivia(IReadOnlyList<SyntaxTrivia> triviaList, bool endOfLineIsWhitespace = true)
+        internal static int IndexOfFirstNonWhitespaceTrivia<T>(T triviaList, bool endOfLineIsWhitespace = true)
+            where T : IReadOnlyList<SyntaxTrivia>
         {
             for (var index = 0; index < triviaList.Count; index++)
             {
@@ -50,8 +55,10 @@
         /// Returns the index of the first trivia that is not part of a blank line.
         /// </summary>
         /// <param name="triviaList">The trivia list to process.</param>
+        /// <typeparam name="T">The type of the trivia list.</typeparam>
         /// <returns>The index of the first trivia that is not part of a blank line, or -1 if there is no such trivia.</returns>
-        internal static int IndexOfFirstNonBlankLineTrivia(IReadOnlyList<SyntaxTrivia> triviaList)
+        internal static int IndexOfFirstNonBlankLineTrivia<T>(T triviaList)
+            where T : IReadOnlyList<SyntaxTrivia>
         {
             var firstNonWhitespaceTriviaIndex = IndexOfFirstNonWhitespaceTrivia(triviaList);
             var startIndex = (firstNonWhitespaceTriviaIndex == -1) ? triviaList.Count : firstNonWhitespaceTriviaIndex;
@@ -72,8 +79,10 @@
         /// Returns the index into the trivia list where the trailing whitespace starts.
         /// </summary>
         /// <param name="triviaList">The trivia list to process.</param>
+        /// <typeparam name="T">The type of the trivia list.</typeparam>
         /// <returns>The index where the trailing whitespace starts, or -1 if there is no trailing whitespace.</returns>
-        internal static int IndexOfTrailingWhitespace(IReadOnlyList<SyntaxTrivia> triviaList)
+        internal static int IndexOfTrailingWhitespace<T>(T triviaList)
+            where T : IReadOnlyList<SyntaxTrivia>
         {
             var done = false;
             int whiteSpaceStartIndex = -1;
@@ -107,6 +116,67 @@
             }
 
             return (whiteSpaceStartIndex < triviaList.Count) ? whiteSpaceStartIndex : -1;
+        }
+
+        /// <summary>
+        /// Removes a range of elements from the <see cref="SyntaxTriviaList"/>.
+        /// </summary>
+        /// <param name="list">The list to remove elements from.</param>
+        /// <param name="index">The zero-based starting index of the range of elements to remove.</param>
+        /// <param name="count">The number of elements to remove.</param>
+        /// <returns>A copy of <paramref name="list"/> with the specified range of elements removed.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">
+        /// <para>If <paramref name="index"/> is less than 0.</para>
+        /// <para>-or-</para>
+        /// <para>If <paramref name="count"/> is less than 0.</para>
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        /// <para>If <paramref name="index"/> and <paramref name="count"/> do not denote a valid range of elements in
+        /// the <see cref="SyntaxTriviaList"/>.</para>
+        /// </exception>
+        internal static SyntaxTriviaList RemoveRange(this SyntaxTriviaList list, int index, int count)
+        {
+            if (index < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count));
+            }
+
+            if (index > list.Count - count)
+            {
+                throw new ArgumentException("The specified range of elements does not exist in the list.");
+            }
+
+            SyntaxTrivia[] trivia = new SyntaxTrivia[list.Count - count];
+            for (int i = 0; i < index; i++)
+            {
+                trivia[i] = list[i];
+            }
+
+            for (int i = index; i + count < list.Count; i++)
+            {
+                trivia[i] = list[i + count];
+            }
+
+            return SyntaxFactory.TriviaList(trivia);
+        }
+
+        internal static SyntaxTriviaList WithoutDirectiveTrivia(this SyntaxTriviaList triviaList)
+        {
+            var resultTriviaList = new List<SyntaxTrivia>(triviaList.Count);
+            foreach (var trivia in triviaList)
+            {
+                if (!trivia.IsDirective)
+                {
+                    resultTriviaList.Add(trivia);
+                }
+            }
+
+            return SyntaxFactory.TriviaList(resultTriviaList);
         }
 
         /// <summary>
@@ -153,7 +223,7 @@
         internal static SyntaxTriviaList WithoutLeadingWhitespace(this SyntaxTriviaList triviaList, bool endOfLineIsWhitespace = true)
         {
             var nonWhitespaceIndex = IndexOfFirstNonWhitespaceTrivia(triviaList, endOfLineIsWhitespace);
-            return (nonWhitespaceIndex >= 0) ? SyntaxFactory.TriviaList(triviaList.Take(nonWhitespaceIndex)) : SyntaxFactory.TriviaList();
+            return (nonWhitespaceIndex >= 0) ? SyntaxFactory.TriviaList(triviaList.Skip(nonWhitespaceIndex)) : SyntaxFactory.TriviaList();
         }
 
         /// <summary>
@@ -167,7 +237,7 @@
         /// <param name="trivia">The trivia to create the list from.</param>
         /// <param name="triviaIndex">The index of the trivia in the created trivia list.</param>
         /// <returns>The created trivia list.</returns>
-        internal static IReadOnlyList<SyntaxTrivia> GetContainingTriviaList(SyntaxTrivia trivia, out int triviaIndex)
+        internal static DualTriviaListHelper GetContainingTriviaList(SyntaxTrivia trivia, out int triviaIndex)
         {
             var token = trivia.Token;
             SyntaxTriviaList part1;
@@ -199,17 +269,20 @@
         /// <param name="list1">The first part of the new list.</param>
         /// <param name="list2">The second part of the new list.</param>
         /// <returns>The merged trivia list.</returns>
-        internal static IReadOnlyList<SyntaxTrivia> MergeTriviaLists(IReadOnlyList<SyntaxTrivia> list1, IReadOnlyList<SyntaxTrivia> list2)
+        internal static DualTriviaListHelper MergeTriviaLists(SyntaxTriviaList list1, SyntaxTriviaList list2)
         {
             return new DualTriviaListHelper(list1, list2);
         }
 
         /// <summary>
-        /// Determines if the given token has leading blank lines. Leading whitespace on the same line as the token is ignored.
+        /// Determines if the given token is immediately preceded by blank lines. Leading whitespace on the same line as
+        /// the token is ignored.
         /// </summary>
-        /// <param name="token">The token to check for leading blank lines.</param>
-        /// <returns>True if the token has leading blank lines.</returns>
-        internal static bool HasLeadingBlankLines(this SyntaxToken token)
+        /// <param name="token">The token to check for immediately preceding blank lines.</param>
+        /// <returns>
+        /// <see langword="true"/> if the token is immediately preceded by blank lines; otherwise, <see langword="false"/>.
+        /// </returns>
+        internal static bool IsPrecededByBlankLines(this SyntaxToken token)
         {
             if (!token.HasLeadingTrivia)
             {
@@ -350,13 +423,13 @@
         /// <summary>
         /// Helper class that merges two SyntaxTriviaLists with (hopefully) the lowest possible performance penalty.
         /// </summary>
-        private class DualTriviaListHelper : IReadOnlyList<SyntaxTrivia>
+        internal struct DualTriviaListHelper : IReadOnlyList<SyntaxTrivia>
         {
-            private readonly IReadOnlyList<SyntaxTrivia> part1;
+            private readonly SyntaxTriviaList part1;
             private readonly int part1Count;
-            private readonly IReadOnlyList<SyntaxTrivia> part2;
+            private readonly SyntaxTriviaList part2;
 
-            public DualTriviaListHelper(IReadOnlyList<SyntaxTrivia> part1, IReadOnlyList<SyntaxTrivia> part2)
+            public DualTriviaListHelper(SyntaxTriviaList part1, SyntaxTriviaList part2)
             {
                 this.part1 = part1;
                 this.part2 = part2;
@@ -401,6 +474,42 @@
             IEnumerator IEnumerable.GetEnumerator()
             {
                 return this.GetEnumerator();
+            }
+
+            public SyntaxTrivia First()
+            {
+                return this[0];
+            }
+
+            public SyntaxTrivia Last()
+            {
+                return this[this.Count - 1];
+            }
+
+            public bool Any(SyntaxKind kind)
+            {
+                return this.part1.Any(kind) || this.part2.Any(kind);
+            }
+
+            public bool All(Func<SyntaxTrivia, bool> predicate)
+            {
+                foreach (var trivia in this.part1)
+                {
+                    if (!predicate(trivia))
+                    {
+                        return false;
+                    }
+                }
+
+                foreach (var trivia in this.part2)
+                {
+                    if (!predicate(trivia))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
         }
     }

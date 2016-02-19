@@ -1,18 +1,22 @@
-﻿namespace StyleCop.Analyzers.ReadabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.ReadabilityRules
 {
     using System.Collections.Immutable;
+    using System.Diagnostics.CodeAnalysis;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.Diagnostics;
 
     /// <summary>
-    /// A C# statement contains a region tag between the declaration of the statement and the opening curly bracket of
-    /// the statement.
+    /// A C# statement contains a region tag between the declaration of the statement and the opening brace of the
+    /// statement.
     /// </summary>
     /// <remarks>
     /// <para>This diagnostic is not implemented in StyleCopAnalyzers.</para>
     ///
     /// <para>A violation of this rule occurs when the code contains a region tag in between the declaration and the
-    /// opening curly bracket. For example:</para>
+    /// opening brace. For example:</para>
     /// <code language="csharp">
     /// if (x != y)
     /// #region
@@ -24,7 +28,7 @@
     /// </remarks>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     [NoDiagnostic("This diagnostic is rarely-occurring specialization of SA1123; the latter is now preferred in all cases.")]
-    public class SA1109BlockStatementsMustNotContainEmbeddedRegions : DiagnosticAnalyzer
+    internal class SA1109BlockStatementsMustNotContainEmbeddedRegions : DiagnosticAnalyzer
     {
         /// <summary>
         /// The ID for diagnostics produced by the <see cref="SA1109BlockStatementsMustNotContainEmbeddedRegions"/>
@@ -39,19 +43,12 @@
         private static readonly DiagnosticDescriptor Descriptor =
             new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, AnalyzerCategory.ReadabilityRules, DiagnosticSeverity.Warning, AnalyzerConstants.DisabledByDefault, Description, HelpLink, WellKnownDiagnosticTags.NotConfigurable);
 
-        private static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsValue =
+        /// <inheritdoc/>
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
             ImmutableArray.Create(Descriptor);
 
         /// <inheritdoc/>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        {
-            get
-            {
-                return SupportedDiagnosticsValue;
-            }
-        }
-
-        /// <inheritdoc/>
+        [ExcludeFromCodeCoverage]
         public override void Initialize(AnalysisContext context)
         {
             // This diagnostic is not implemented (by design) in StyleCopAnalyzers.

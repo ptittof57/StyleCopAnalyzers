@@ -1,4 +1,7 @@
-﻿namespace TestHelper
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace TestHelper
 {
     using System;
     using System.Collections.Generic;
@@ -9,6 +12,7 @@
     using System.Threading.Tasks;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.Diagnostics;
+    using Microsoft.CodeAnalysis.Formatting;
     using Xunit;
 
     /// <summary>
@@ -16,6 +20,55 @@
     /// </summary>
     public abstract partial class DiagnosticVerifier
     {
+        private const int DefaultIndentationSize = 4;
+        private const int DefaultTabSize = 4;
+        private const bool DefaultUseTabs = false;
+
+        public DiagnosticVerifier()
+        {
+            this.IndentationSize = DefaultIndentationSize;
+            this.TabSize = DefaultTabSize;
+            this.UseTabs = DefaultUseTabs;
+        }
+
+        /// <summary>
+        /// Gets or sets the value of the <see cref="FormattingOptions.IndentationSize"/> to apply to the test
+        /// workspace.
+        /// </summary>
+        /// <value>
+        /// The value of the <see cref="FormattingOptions.IndentationSize"/> to apply to the test workspace.
+        /// </value>
+        public int IndentationSize
+        {
+            get;
+            protected set;
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the <see cref="FormattingOptions.UseTabs"/> option is applied to the
+        /// test workspace.
+        /// </summary>
+        /// <value>
+        /// The value of the <see cref="FormattingOptions.UseTabs"/> to apply to the test workspace.
+        /// </value>
+        public bool UseTabs
+        {
+            get;
+            protected set;
+        }
+
+        /// <summary>
+        /// Gets or sets the value of the <see cref="FormattingOptions.TabSize"/> to apply to the test workspace.
+        /// </summary>
+        /// <value>
+        /// The value of the <see cref="FormattingOptions.TabSize"/> to apply to the test workspace.
+        /// </value>
+        public int TabSize
+        {
+            get;
+            protected set;
+        }
+
         protected static DiagnosticResult[] EmptyDiagnosticResults { get; } = { };
 
         /// <summary>
@@ -91,7 +144,7 @@
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         protected Task VerifyCSharpDiagnosticAsync(string source, DiagnosticResult[] expected, CancellationToken cancellationToken, string filename = null)
         {
-            return this.VerifyDiagnosticsAsync(new[] { source }, LanguageNames.CSharp, this.GetCSharpDiagnosticAnalyzers().ToImmutableArray(), expected, cancellationToken, new[] { filename });
+            return this.VerifyDiagnosticsAsync(new[] { source }, LanguageNames.CSharp, this.GetCSharpDiagnosticAnalyzers().ToImmutableArray(), expected, cancellationToken, filename != null ? new[] { filename } : null);
         }
 
         /// <summary>
@@ -126,7 +179,7 @@
         /// diagnostics for the sources.</param>
         private static void VerifyDiagnosticResults(IEnumerable<Diagnostic> actualResults, ImmutableArray<DiagnosticAnalyzer> analyzers, DiagnosticResult[] expectedResults)
         {
-            int expectedCount = expectedResults.Count();
+            int expectedCount = expectedResults.Length;
             int actualCount = actualResults.Count();
 
             if (expectedCount != actualCount)
@@ -164,7 +217,8 @@
                         string message =
                             string.Format(
                                 "Expected {0} additional locations but got {1} for Diagnostic:\r\n    {2}\r\n",
-                                expected.Locations.Length - 1, additionalLocations.Length,
+                                expected.Locations.Length - 1,
+                                additionalLocations.Length,
                                 FormatDiagnostics(analyzers, actual));
                         Assert.True(false, message);
                     }
@@ -180,7 +234,9 @@
                     string message =
                         string.Format(
                             "Expected diagnostic id to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                            expected.Id, actual.Id, FormatDiagnostics(analyzers, actual));
+                            expected.Id,
+                            actual.Id,
+                            FormatDiagnostics(analyzers, actual));
                     Assert.True(false, message);
                 }
 
@@ -189,7 +245,9 @@
                     string message =
                         string.Format(
                             "Expected diagnostic severity to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                            expected.Severity, actual.Severity, FormatDiagnostics(analyzers, actual));
+                            expected.Severity,
+                            actual.Severity,
+                            FormatDiagnostics(analyzers, actual));
                     Assert.True(false, message);
                 }
 
@@ -198,7 +256,9 @@
                     string message =
                         string.Format(
                             "Expected diagnostic message to be \"{0}\" was \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                            expected.Message, actual.GetMessage(), FormatDiagnostics(analyzers, actual));
+                            expected.Message,
+                            actual.GetMessage(),
+                            FormatDiagnostics(analyzers, actual));
                     Assert.True(false, message);
                 }
             }
@@ -221,7 +281,9 @@
             string message =
                 string.Format(
                     "Expected diagnostic to be in file \"{0}\" was actually in file \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                    expected.Path, actualSpan.Path, FormatDiagnostics(analyzers, diagnostic));
+                    expected.Path,
+                    actualSpan.Path,
+                    FormatDiagnostics(analyzers, diagnostic));
             Assert.True(
                 actualSpan.Path == expected.Path || (actualSpan.Path != null && actualSpan.Path.Contains("Test0.") && expected.Path.Contains("Test.")),
                 message);
@@ -236,7 +298,9 @@
                     string message2 =
                         string.Format(
                             "Expected diagnostic to be on line \"{0}\" was actually on line \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                            expected.Line, actualLinePosition.Line + 1, FormatDiagnostics(analyzers, diagnostic));
+                            expected.Line,
+                            actualLinePosition.Line + 1,
+                            FormatDiagnostics(analyzers, diagnostic));
                     Assert.True(false, message2);
                 }
             }
@@ -249,7 +313,9 @@
                     string message2 =
                         string.Format(
                             "Expected diagnostic to start at column \"{0}\" was actually at column \"{1}\"\r\n\r\nDiagnostic:\r\n    {2}\r\n",
-                            expected.Column, actualLinePosition.Character + 1, FormatDiagnostics(analyzers, diagnostic));
+                            expected.Column,
+                            actualLinePosition.Character + 1,
+                            FormatDiagnostics(analyzers, diagnostic));
                     Assert.True(false, message2);
                 }
             }
@@ -268,7 +334,7 @@
             {
                 var diagnosticsId = diagnostics[i].Id;
 
-                builder.AppendLine("// " + diagnostics[i].ToString());
+                builder.Append("// ").AppendLine(diagnostics[i].ToString());
 
                 var applicableAnalyzer = analyzers.FirstOrDefault(a => a.SupportedDiagnostics.Any(dd => dd.Id == diagnosticsId));
                 if (applicableAnalyzer != null)
@@ -284,7 +350,7 @@
                     {
                         Assert.True(
                             location.IsInSource,
-                            string.Format("Test base does not currently handle diagnostics in metadata locations. Diagnostic in metadata:\r\n", diagnostics[i]));
+                            string.Format("Test base does not currently handle diagnostics in metadata locations. Diagnostic in metadata:\r\n{0}", diagnostics[i]));
 
                         string resultMethodName = diagnostics[i].Location.SourceTree.FilePath.EndsWith(".cs") ? "GetCSharpResultAt" : "GetBasicResultAt";
                         var linePosition = diagnostics[i].Location.GetLineSpan().StartLinePosition;
@@ -310,6 +376,26 @@
             return builder.ToString();
         }
 
+        private static bool IsSubjectToExclusion(DiagnosticResult result)
+        {
+            if (result.Id.StartsWith("CS", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (result.Id.StartsWith("AD", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (result.Locations.Length == 0)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// General method that gets a collection of actual <see cref="Diagnostic"/>s found in the source after the
         /// analyzer is run, then verifies each of them.
@@ -330,12 +416,13 @@
             if (filenames == null)
             {
                 // Also check if the analyzer honors exclusions
-                if (expected.Any(x => x.Id.StartsWith("SA", StringComparison.Ordinal) || x.Id.StartsWith("SX", StringComparison.Ordinal)))
+                if (expected.Any(IsSubjectToExclusion))
                 {
-                    // We want to look at non-stylecop diagnostics only. We also insert a new line at the beginning
-                    // so we have to move all diagnostic location down by one line
+                    // Diagnostics reported by the compiler and analyzer diagnostics which don't have a location will
+                    // still be reported. We also insert a new line at the beginning so we have to move all diagnostic
+                    // locations which have a specific position down by one line.
                     var expectedResults = expected
-                        .Where(x => !x.Id.StartsWith("SA", StringComparison.Ordinal) && !x.Id.StartsWith("SX", StringComparison.Ordinal))
+                        .Where(x => !IsSubjectToExclusion(x))
                         .Select(x => x.WithLineOffset(1))
                         .ToArray();
 

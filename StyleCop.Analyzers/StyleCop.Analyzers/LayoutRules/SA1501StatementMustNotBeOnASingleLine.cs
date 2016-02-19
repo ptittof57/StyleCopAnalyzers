@@ -1,5 +1,9 @@
-﻿namespace StyleCop.Analyzers.LayoutRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.LayoutRules
 {
+    using System;
     using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.Linq;
@@ -11,11 +15,11 @@
     using SpacingRules;
 
     /// <summary>
-    /// A C# statement containing opening and closing curly brackets is written completely on a single line.
+    /// A C# statement containing opening and closing braces is written completely on a single line.
     /// </summary>
     /// <remarks>
-    /// <para>A violation of this rule occurs when a statement that is wrapped in opening and closing curly brackets is
-    /// written on a single line. For example:</para>
+    /// <para>A violation of this rule occurs when a statement that is wrapped in opening and closing braces is written
+    /// on a single line. For example:</para>
     ///
     /// <code language="csharp">
     /// public object Method()
@@ -25,8 +29,8 @@
     /// </code>
     ///
     /// <para>When StyleCop checks this code, a violation of this rule will occur because the entire lock statement is
-    /// written on one line. The statement should be written across multiple lines, with the opening and closing curly
-    /// brackets each on their own line, as follows:</para>
+    /// written on one line. The statement should be written across multiple lines, with the opening and closing braces
+    /// each on their own line, as follows:</para>
     ///
     /// <code language="csharp">
     /// public object Method()
@@ -39,7 +43,7 @@
     /// </code>
     /// </remarks>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class SA1501StatementMustNotBeOnASingleLine : DiagnosticAnalyzer
+    internal class SA1501StatementMustNotBeOnASingleLine : DiagnosticAnalyzer
     {
         /// <summary>
         /// The ID for diagnostics produced by the <see cref="SA1501StatementMustNotBeOnASingleLine"/> analyzer.
@@ -47,28 +51,22 @@
         public const string DiagnosticId = "SA1501";
         private const string Title = "Statement must not be on a single line";
         private const string MessageFormat = "Statement must not be on a single line";
-        private const string Description = "A C# statement containing opening and closing curly brackets is written completely on a single line.";
+        private const string Description = "A C# statement containing opening and closing braces is written completely on a single line.";
         private const string HelpLink = "https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1501.md";
 
         private static readonly DiagnosticDescriptor Descriptor =
             new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, AnalyzerCategory.LayoutRules, DiagnosticSeverity.Warning, AnalyzerConstants.EnabledByDefault, Description, HelpLink);
 
-        private static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsValue =
-            ImmutableArray.Create(Descriptor);
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
 
         /// <inheritdoc/>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        {
-            get
-            {
-                return SupportedDiagnosticsValue;
-            }
-        }
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
+            ImmutableArray.Create(Descriptor);
 
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterCompilationStartAction(HandleCompilationStart);
+            context.RegisterCompilationStartAction(CompilationStartAction);
         }
 
         private static void HandleCompilationStart(CompilationStartAnalysisContext context)
@@ -76,7 +74,7 @@
             context.RegisterSyntaxNodeActionHonorExclusions(HandleBlock, SyntaxKind.Block);
 
             // If SA1503 is suppressed, we need to handle compound blocks as well.
-            if (context.IsAnalyzerSuppressed(SA1503CurlyBracketsMustNotBeOmitted.DiagnosticId))
+            if (context.IsAnalyzerSuppressed(SA1503BracesMustNotBeOmitted.DiagnosticId))
             {
                 context.RegisterSyntaxNodeActionHonorExclusions(HandleIfStatement, SyntaxKind.IfStatement);
                 context.RegisterSyntaxNodeActionHonorExclusions(ctx => CheckChildStatement(ctx, ctx.Node, ((DoStatementSyntax)ctx.Node).Statement), SyntaxKind.DoStatement);
@@ -141,7 +139,7 @@
                 }
             }
 
-            if (!context.IsAnalyzerSuppressed(SA1520UseCurlyBracketsConsistently.DiagnosticId))
+            if (!context.IsAnalyzerSuppressed(SA1520UseBracesConsistently.DiagnosticId))
             {
                 // inconsistencies will be reported as SA1520, as long as it's not suppressed
                 if (clauses.OfType<BlockSyntax>().Any())
@@ -189,7 +187,7 @@
                 return;
             }
 
-            if (!context.IsAnalyzerSuppressed(SA1519CurlyBracketsMustNotBeOmittedFromMultiLineChildStatement.DiagnosticId))
+            if (!context.IsAnalyzerSuppressed(SA1519BracesMustNotBeOmittedFromMultiLineChildStatement.DiagnosticId))
             {
                 // diagnostics for multi-line statements is handled by SA1519, as long as it's not suppressed
                 FileLinePositionSpan lineSpan = childStatement.GetLineSpan();

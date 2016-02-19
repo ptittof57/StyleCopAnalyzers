@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.SpacingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.SpacingRules
 {
     using System;
     using System.Collections.Generic;
@@ -17,7 +20,7 @@
     public class SA1019UnitTests : CodeFixVerifier
     {
         /// <summary>
-        /// The members access operators to test.
+        /// Gets the members access operators to test.
         /// </summary>
         /// <value>The members access operators to test.</value>
         public static IEnumerable<object[]> Operators
@@ -194,7 +197,7 @@
         /// <inheritdoc/>
         protected override CodeFixProvider GetCSharpCodeFixProvider()
         {
-            return new OpenCloseSpacingCodeFixProvider();
+            return new TokenSpacingCodeFixProvider();
         }
 
         /// <summary>

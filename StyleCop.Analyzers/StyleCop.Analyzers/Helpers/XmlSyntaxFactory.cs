@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Helpers
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Helpers
 {
     using System;
     using System.Xml.Linq;
@@ -63,7 +66,7 @@
 
         public static XmlTextAttributeSyntax TextAttribute(string name, string value)
         {
-            return TextAttribute(name, TextLiteral(value));
+            return TextAttribute(name, TextLiteral(value, true));
         }
 
         public static XmlTextAttributeSyntax TextAttribute(string name, params SyntaxToken[] textTokens)
@@ -103,7 +106,7 @@
 
         public static XmlCrefAttributeSyntax CrefAttribute(CrefSyntax cref, SyntaxKind quoteKind)
         {
-            cref = cref.ReplaceTokens(cref.DescendantTokens(), ReplaceBracketTokens);
+            cref = cref.ReplaceTokens(cref.DescendantTokens(), ReplaceBraceTokens);
             return SyntaxFactory.XmlCrefAttribute(
                 SyntaxFactory.XmlName(XmlCommentHelper.CrefArgumentName),
                 SyntaxFactory.Token(quoteKind),
@@ -140,7 +143,17 @@
 
         public static SyntaxToken TextLiteral(string value)
         {
+            return TextLiteral(value, false);
+        }
+
+        public static SyntaxToken TextLiteral(string value, bool escapeQuotes)
+        {
             string encoded = new XText(value).ToString();
+            if (escapeQuotes)
+            {
+                encoded = encoded.Replace("\"", "&quot;");
+            }
+
             return SyntaxFactory.XmlTextLiteral(
                 SyntaxFactory.TriviaList(),
                 encoded,
@@ -284,7 +297,7 @@
                 TextAttribute("langword", keyword));
         }
 
-        private static SyntaxToken ReplaceBracketTokens(SyntaxToken originalToken, SyntaxToken rewrittenToken)
+        private static SyntaxToken ReplaceBraceTokens(SyntaxToken originalToken, SyntaxToken rewrittenToken)
         {
             if (rewrittenToken.IsKind(SyntaxKind.LessThanToken) && string.Equals("<", rewrittenToken.Text, StringComparison.Ordinal))
             {

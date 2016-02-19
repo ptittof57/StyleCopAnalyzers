@@ -1,4 +1,7 @@
-﻿namespace StyleCopTester
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCopTester
 {
     using System;
     using System.Collections.Generic;
@@ -26,6 +29,8 @@
             this.CodeFixProvider = codeFixProvider;
             this.DocumentDiagnosticsToFix = documentDiagnosticsToFix;
             this.ProjectDiagnosticsToFix = projectDiagnosticsToFix;
+            this.NumberOfDiagnostics = documentDiagnosticsToFix.SelectMany(x => x.Value.Select(y => y.Value).SelectMany(y => y)).Count()
+                + projectDiagnosticsToFix.SelectMany(x => x.Value).Count();
         }
 
         internal string CodeFixEquivalenceKey { get; }
@@ -39,6 +44,8 @@
         internal ImmutableDictionary<ProjectId, ImmutableDictionary<string, ImmutableArray<Diagnostic>>> DocumentDiagnosticsToFix { get; }
 
         internal ImmutableDictionary<ProjectId, ImmutableArray<Diagnostic>> ProjectDiagnosticsToFix { get; }
+
+        internal int NumberOfDiagnostics { get; }
 
         internal static async Task<ImmutableArray<CodeFixEquivalenceGroup>> CreateAsync(CodeFixProvider codeFixProvider, ImmutableDictionary<ProjectId, ImmutableArray<Diagnostic>> allDiagnostics, Solution solution, CancellationToken cancellationToken)
         {

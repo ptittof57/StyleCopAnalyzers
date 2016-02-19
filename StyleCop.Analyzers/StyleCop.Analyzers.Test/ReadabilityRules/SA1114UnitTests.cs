@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.ReadabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.ReadabilityRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -1060,6 +1063,35 @@ public class SomeOtherClass
     {
     }
 }";
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that directive trivia will not result in diagnostics.
+        /// This is a regression test for #1623
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestWithDirectiveTriviaAsync()
+        {
+            var testCode = @"
+public interface ITestInterface1 { }
+
+public interface ITestInterface2 { }
+
+public class TestClass
+{
+    public void TestMethod(
+#if TESTSYMBOL
+        ITestInterface1 instance)
+#else
+        ITestInterface2 instance)
+#endif
+    {
+    }
+}
+";
 
             await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }

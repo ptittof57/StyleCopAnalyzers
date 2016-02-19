@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.HelperTests
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.HelperTests
 {
     using System.Linq;
     using Analyzers.Helpers;
@@ -66,7 +69,7 @@ public class Foo
 }");
 
             var accessor = tree.GetRoot().DescendantNodes().OfType<AccessorDeclarationSyntax>().Single();
-            Assert.False(accessor.GetFirstToken().HasLeadingBlankLines());
+            Assert.False(accessor.GetFirstToken().IsPrecededByBlankLines());
         }
 
         [Fact]

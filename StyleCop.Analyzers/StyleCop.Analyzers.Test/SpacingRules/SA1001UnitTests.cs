@@ -1,9 +1,13 @@
-﻿namespace StyleCop.Analyzers.Test.SpacingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.SpacingRules
 {
     using System;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CodeFixes;
     using Microsoft.CodeAnalysis.Diagnostics;
     using StyleCop.Analyzers.SpacingRules;
@@ -12,7 +16,7 @@
 
     /// <summary>
     /// This class contains unit tests for <see cref="SA1001CommasMustBeSpacedCorrectly"/> and
-    /// <see cref="SA1001CodeFixProvider"/>.
+    /// <see cref="TokenSpacingCodeFixProvider"/>.
     /// </summary>
     public class SA1001UnitTests : CodeFixVerifier
     {
@@ -68,15 +72,23 @@
         [Fact]
         public async Task TestFirstCommaInLineAsync()
         {
-            string statement = $"f(a{Environment.NewLine}, b);";
-            await this.TestCommaInStatementOrDeclAsync(statement, EmptyDiagnosticResults, statement).ConfigureAwait(false);
+            string testStatement = $"f(a{Environment.NewLine}, b);";
+            string fixedStatement = $"f(a,{Environment.NewLine}b);";
+
+            DiagnosticResult expected = this.CSharpDiagnostic().WithArguments(" not", "preceded").WithLocation(8, 1);
+
+            await this.TestCommaInStatementOrDeclAsync(testStatement, expected, fixedStatement).ConfigureAwait(false);
         }
 
         [Fact]
         public async Task TestCommentBeforeFirstCommaInLineAsync()
         {
-            string statement = $"f(a // comment{Environment.NewLine}, b);";
-            await this.TestCommaInStatementOrDeclAsync(statement, EmptyDiagnosticResults, statement).ConfigureAwait(false);
+            string testStatement = $"f(a // comment{Environment.NewLine}, b);";
+            string fixedStatement = $"f(a, // comment{Environment.NewLine}b);";
+
+            DiagnosticResult expected = this.CSharpDiagnostic().WithArguments(" not", "preceded").WithLocation(8, 1);
+
+            await this.TestCommaInStatementOrDeclAsync(testStatement, expected, fixedStatement).ConfigureAwait(false);
         }
 
         [Fact]
@@ -151,6 +163,76 @@
             await this.TestCommaInStatementOrDeclAsync(statement, expected, fixedStatement).ConfigureAwait(false);
         }
 
+        [Fact]
+        public async Task TestSpaceOnlyBeforeCommaAsync()
+        {
+            string spaceOnlyBeforeComma = @"f(a ,b);";
+            string spaceOnlyAfterComma = @"f(a, b);";
+
+            DiagnosticResult[] expected =
+            {
+                this.CSharpDiagnostic().WithArguments(" not", "preceded").WithLocation(7, 17),
+                this.CSharpDiagnostic().WithArguments(string.Empty, "followed").WithLocation(7, 17)
+            };
+
+            await this.TestCommaInStatementOrDeclAsync(spaceOnlyBeforeComma, expected, spaceOnlyAfterComma).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestMissingCommaAsync()
+        {
+            string testCode = @"
+class ClassName
+{
+    void MethodName()
+    {
+        int[] exp = { 0 0 };
+    }
+}
+";
+
+            DiagnosticResult[] expected =
+            {
+                new DiagnosticResult
+                {
+                    Id = "CS1003",
+                    Severity = DiagnosticSeverity.Error,
+                    Message = "Syntax error, ',' expected",
+                    Locations = new[] { new DiagnosticResultLocation("Test0.cs", 6, 25) }
+                }
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task TestCommaFollowedByCommentAsync()
+        {
+            string testCode = @"
+class ClassName
+{
+    void MethodName()
+    {
+        int[] exp = { 0,/*comment*/ 0 };
+    }
+}
+";
+            string fixedCode = @"
+class ClassName
+{
+    void MethodName()
+    {
+        int[] exp = { 0, /*comment*/ 0 };
+    }
+}
+";
+
+            DiagnosticResult expected = this.CSharpDiagnostic().WithArguments(string.Empty, "followed").WithLocation(6, 24);
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+        }
+
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()
         {
             yield return new SA1001CommasMustBeSpacedCorrectly();
@@ -158,7 +240,7 @@
 
         protected override CodeFixProvider GetCSharpCodeFixProvider()
         {
-            return new SA1001CodeFixProvider();
+            return new TokenSpacingCodeFixProvider();
         }
 
         private Task TestCommaInStatementOrDeclAsync(string originalStatement, DiagnosticResult expected, string fixedStatement)
@@ -186,7 +268,11 @@
             string fixedCode = string.Format(template, fixedStatement);
 
             await this.VerifyCSharpDiagnosticAsync(originalCode, expected, CancellationToken.None).ConfigureAwait(false);
-            await this.VerifyCSharpFixAsync(originalCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+            if (expected.Length > 0)
+            {
+                await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+                await this.VerifyCSharpFixAsync(originalCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+            }
         }
     }
 }

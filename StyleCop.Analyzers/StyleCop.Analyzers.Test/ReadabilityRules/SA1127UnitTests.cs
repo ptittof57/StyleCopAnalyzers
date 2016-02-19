@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.ReadabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.ReadabilityRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -62,6 +65,124 @@ class Foo
     {{ }}
 }}";
             var expected = this.CSharpDiagnostic().WithLocation(4, 30);
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// This is a regression test for DotNetAnalyzers/StyleCopAnalyzers#1476:
+        /// https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/1476
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestViolationWithObsoleteMethodDeclarationAsync()
+        {
+            var testCode = @"
+class Foo
+{
+    [System.Obsolete]
+    private void Method<T>() where T : class { }
+}";
+            var fixedCode = @"
+class Foo
+{
+    [System.Obsolete]
+    private void Method<T>()
+        where T : class
+    { }
+}";
+            var expected = this.CSharpDiagnostic().WithLocation(5, 30);
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// This is a regression test for DotNetAnalyzers/StyleCopAnalyzers#1476:
+        /// https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/1476
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestViolationWithMethodDeclarationMultiLineParametersAsync()
+        {
+            var testCode = @"
+class Foo
+{
+    private void Method<T>(
+        int a,
+        int b) where T : class { }
+}";
+            var fixedCode = @"
+class Foo
+{
+    private void Method<T>(
+        int a,
+        int b)
+        where T : class
+    { }
+}";
+            var expected = this.CSharpDiagnostic().WithLocation(6, 16);
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// This is a regression test for DotNetAnalyzers/StyleCopAnalyzers#1652:
+        /// https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/1652
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestViolationWithMethodDeclarationAndXmlCommentsAsync()
+        {
+            var testCode = $@"
+class Foo
+{{
+    /// <summary>Foo</summary>
+    /// <typeparam name=""T"">The type.</typeparam>
+    private void Method<T>() where T : class {{ }}
+}}";
+            var fixedCode = $@"
+class Foo
+{{
+    /// <summary>Foo</summary>
+    /// <typeparam name=""T"">The type.</typeparam>
+    private void Method<T>()
+        where T : class
+    {{ }}
+}}";
+            var expected = this.CSharpDiagnostic().WithLocation(6, 30);
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
+            await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// This is a regression test for DotNetAnalyzers/StyleCopAnalyzers#1652:
+        /// https://github.com/DotNetAnalyzers/StyleCopAnalyzers/issues/1652
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Fact]
+        public async Task TestViolationWithMethodDeclarationRegionDirectiveAsync()
+        {
+            var testCode = $@"
+class Foo
+{{
+    #region Test
+    private void Method<T>() where T : class {{ }}
+    #endregion
+}}";
+            var fixedCode = $@"
+class Foo
+{{
+    #region Test
+    private void Method<T>()
+        where T : class
+    {{ }}
+    #endregion
+}}";
+            var expected = this.CSharpDiagnostic().WithLocation(5, 30);
             await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpDiagnosticAsync(fixedCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpFixAsync(testCode, fixedCode, cancellationToken: CancellationToken.None).ConfigureAwait(false);

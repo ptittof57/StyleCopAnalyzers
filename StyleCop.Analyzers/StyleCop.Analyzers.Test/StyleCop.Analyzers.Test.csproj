@@ -113,6 +113,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AttributeTests.cs" />
     <Compile Include="DocumentationRules\FileHeaderTestBase.cs" />
     <Compile Include="DocumentationRules\InheritdocCodeFixProviderUnitTests.cs" />
     <Compile Include="DocumentationRules\NoXmlFileHeaderUnitTests.cs" />
@@ -139,7 +140,11 @@
     <Compile Include="DocumentationRules\SA1620UnitTests.cs" />
     <Compile Include="DocumentationRules\SA1621UnitTests.cs" />
     <Compile Include="DocumentationRules\SA1622UnitTests.cs" />
+    <Compile Include="DocumentationRules\SA1623UnitTests.cs" />
+    <Compile Include="DocumentationRules\SA1624UnitTests.cs" />
+    <Compile Include="DocumentationRules\SA1625UnitTests.cs" />
     <Compile Include="DocumentationRules\SA1626UnitTests.cs" />
+    <Compile Include="DocumentationRules\SA1627UnitTests.cs" />
     <Compile Include="DocumentationRules\SA1628UnitTests.cs" />
     <Compile Include="DocumentationRules\SA1630UnitTests.cs" />
     <Compile Include="DocumentationRules\SA1631UnitTests.cs" />
@@ -159,17 +164,24 @@
     <Compile Include="DocumentationRules\SA1646UnitTests.cs" />
     <Compile Include="DocumentationRules\SA1647UnitTests.cs" />
     <Compile Include="DocumentationRules\SA1648UnitTests.cs" />
+    <Compile Include="DocumentationRules\SA1649UnitTests.cs" />
     <Compile Include="DocumentationRules\SA1650UnitTests.cs" />
     <Compile Include="DocumentationRules\SA1651UnitTests.cs" />
-    <Compile Include="DocumentationRules\SA1652UnitTests.cs" />
     <Compile Include="ExclusionTests.cs" />
     <Compile Include="ExportCodeFixProviderAttributeNameTest.cs" />
     <Compile Include="Helpers\CodeFixVerifier.Helper.cs" />
     <Compile Include="Helpers\DiagnosticResult.cs" />
+    <Compile Include="Helpers\DiagnosticResultLocation.cs" />
     <Compile Include="Helpers\DiagnosticVerifier.Helper.cs" />
     <Compile Include="Helpers\ExclusionTestAnalyzer.cs" />
+    <Compile Include="Helpers\MetadataReferences.cs" />
     <Compile Include="Helpers\TestDiagnosticProvider.cs" />
+    <Compile Include="Helpers\TestXmlReferenceResolver.cs" />
+    <Compile Include="HelperTests\AccessLevelHelperTests.cs" />
+    <Compile Include="HelperTests\IndentationHelperTests.cs" />
+    <Compile Include="HelperTests\TokenHelperTests.cs" />
     <Compile Include="HelperTests\TriviaHelperTests.cs" />
+    <Compile Include="HelperTests\XmlSyntaxFactoryTests.cs" />
     <Compile Include="LayoutRules\SA1500\SA1500UnitTests.Blocks.cs" />
     <Compile Include="LayoutRules\SA1500\SA1500UnitTests.Classes.cs" />
     <Compile Include="LayoutRules\SA1500\SA1500UnitTests.Constructors.cs" />
@@ -201,6 +213,7 @@
     <Compile Include="LayoutRules\SA1502\SA1502UnitTests.Interfaces.cs" />
     <Compile Include="LayoutRules\SA1502\SA1502UnitTests.Methods.cs" />
     <Compile Include="LayoutRules\SA1502\SA1502UnitTests.Namespaces.cs" />
+    <Compile Include="LayoutRules\SA1502\SA1502UnitTests.Operators.cs" />
     <Compile Include="LayoutRules\SA1502\SA1502UnitTests.Properties.cs" />
     <Compile Include="LayoutRules\SA1502\SA1502UnitTests.TypeDeclarations.cs" />
     <Compile Include="LayoutRules\SA1503UnitTests.cs" />
@@ -243,6 +256,7 @@
     <Compile Include="NamingRules\SA1302UnitTests.cs" />
     <Compile Include="NamingRules\SA1303UnitTests.cs" />
     <Compile Include="NamingRules\SA1304UnitTests.cs" />
+    <Compile Include="NamingRules\SA1305UnitTests.cs" />
     <Compile Include="NamingRules\SA1306UnitTests.cs" />
     <Compile Include="NamingRules\SA1307UnitTests.cs" />
     <Compile Include="NamingRules\SA1308UnitTests.cs" />
@@ -253,6 +267,8 @@
     <Compile Include="NamingRules\SA1313UnitTests.cs" />
     <Compile Include="NamingRules\SX1309SUnitTests.cs" />
     <Compile Include="NamingRules\SX1309UnitTests.cs" />
+    <Compile Include="OrderingRules\SA1200OutsideNamespaceUnitTests.cs" />
+    <Compile Include="OrderingRules\SA1200PreserveUnitTests.cs" />
     <Compile Include="OrderingRules\SA1200UnitTests.cs" />
     <Compile Include="OrderingRules\SA1201UnitTests.cs" />
     <Compile Include="OrderingRules\SA1202UnitTests.cs" />
@@ -263,6 +279,7 @@
     <Compile Include="OrderingRules\SA1207UnitTests.cs" />
     <Compile Include="OrderingRules\SA1208UnitTests.cs" />
     <Compile Include="OrderingRules\SA1209UnitTests.cs" />
+    <Compile Include="OrderingRules\SA1210CombinedSystemDirectivesUnitTests.cs" />
     <Compile Include="OrderingRules\SA1210UnitTests.cs" />
     <Compile Include="OrderingRules\SA1211UnitTests.cs" />
     <Compile Include="OrderingRules\SA1212UnitTests.cs" />
@@ -271,7 +288,10 @@
     <Compile Include="OrderingRules\SA1215UnitTests.cs" />
     <Compile Include="OrderingRules\SA1216UnitTests.cs" />
     <Compile Include="OrderingRules\SA1217UnitTests.cs" />
+    <Compile Include="OrderingRules\UsingCodeFixProviderCombinedSystemDirectivesUnitTests.cs" />
+    <Compile Include="OrderingRules\UsingCodeFixProviderUnitTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PublicApiTests.cs" />
     <Compile Include="ReadabilityRules\SA1100UnitTests.cs" />
     <Compile Include="ReadabilityRules\SA1101UnitTests.cs" />
     <Compile Include="ReadabilityRules\SA1102UnitTests.cs" />
@@ -289,6 +309,7 @@
     <Compile Include="ReadabilityRules\SA1114UnitTests.cs" />
     <Compile Include="ReadabilityRules\SA1115UnitTests.cs" />
     <Compile Include="ReadabilityRules\SA1116UnitTests.cs" />
+    <Compile Include="ReadabilityRules\SA1117UnitTests.cs" />
     <Compile Include="ReadabilityRules\SA1118UnitTests.cs" />
     <Compile Include="ReadabilityRules\SA1120UnitTests.cs" />
     <Compile Include="ReadabilityRules\SA1121UnitTests.cs" />
@@ -298,6 +319,14 @@
     <Compile Include="ReadabilityRules\SA1125UnitTests.cs" />
     <Compile Include="ReadabilityRules\SA1126UnitTests.cs" />
     <Compile Include="ReadabilityRules\SA1127UnitTests.cs" />
+    <Compile Include="ReadabilityRules\SA1128UnitTests.cs" />
+    <Compile Include="ReadabilityRules\SA1129UnitTests.cs" />
+    <Compile Include="ReadabilityRules\SA1130UnitTests.cs" />
+    <Compile Include="ReadabilityRules\SA1131UnitTests.cs" />
+    <Compile Include="ReadabilityRules\SA1132UnitTests.cs" />
+    <Compile Include="ReadabilityRules\SA1133UnitTests.cs" />
+    <Compile Include="ReadabilityRules\SA1134UnitTests.cs" />
+    <Compile Include="ReadabilityRules\SX1101UnitTests.cs" />
     <Compile Include="Settings\SettingsFileCodeFixProviderUnitTests.cs" />
     <Compile Include="Settings\SettingsUnitTests.cs" />
     <Compile Include="SpacingRules\NumberSignSpacingTestBase.cs" />
@@ -328,8 +357,12 @@
     <Compile Include="SpacingRules\SA1024UnitTests.cs" />
     <Compile Include="SpacingRules\SA1025UnitTests.cs" />
     <Compile Include="SpacingRules\SA1026UnitTests.cs" />
+    <Compile Include="SpacingRules\SA1027AlternateIndentationUnitTests.cs" />
     <Compile Include="SpacingRules\SA1027UnitTests.cs" />
+    <Compile Include="SpacingRules\SA1027UseTabsUnitTests.cs" />
     <Compile Include="SpacingRules\SA1028UnitTests.cs" />
+    <Compile Include="SpecialRules\SA0001UnitTests.cs" />
+    <Compile Include="SpecialRules\SA0002UnitTests.cs" />
     <Compile Include="Verifiers\CodeFixVerifier.cs" />
     <Compile Include="Verifiers\DiagnosticVerifier.cs" />
   </ItemGroup>
@@ -346,6 +379,15 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <AdditionalFiles Include="..\stylecop.json">
+      <Link>stylecop.json</Link>
+    </AdditionalFiles>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StyleCop.Analyzers.CodeFixes\StyleCop.Analyzers.CodeFixes.csproj">
+      <Project>{f91f7815-4e63-4698-b053-e57b2d707194}</Project>
+      <Name>StyleCop.Analyzers.CodeFixes</Name>
+    </ProjectReference>
     <ProjectReference Include="..\StyleCop.Analyzers\StyleCop.Analyzers.csproj">
       <Project>{3B052737-06CE-4182-AE0F-08EB82DFA73E}</Project>
       <Name>StyleCop.Analyzers</Name>
@@ -355,8 +397,9 @@
     <Analyzer Include="..\..\packages\AsyncUsageAnalyzers.1.0.0-alpha003\analyzers\dotnet\AsyncUsageAnalyzers.dll" />
     <Analyzer Include="..\..\packages\Microsoft.CodeAnalysis.Analyzers.1.0.0\analyzers\dotnet\cs\Microsoft.CodeAnalysis.Analyzers.dll" />
     <Analyzer Include="..\..\packages\Microsoft.CodeAnalysis.Analyzers.1.0.0\analyzers\dotnet\cs\Microsoft.CodeAnalysis.CSharp.Analyzers.dll" />
-    <Analyzer Include="..\..\packages\StyleCop.Analyzers.1.0.0-beta009\analyzers\dotnet\cs\Newtonsoft.Json.dll" />
-    <Analyzer Include="..\..\packages\StyleCop.Analyzers.1.0.0-beta009\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
+    <Analyzer Include="..\..\packages\StyleCop.Analyzers.1.0.0\analyzers\dotnet\cs\Newtonsoft.Json.dll" />
+    <Analyzer Include="..\..\packages\StyleCop.Analyzers.1.0.0\analyzers\dotnet\cs\StyleCop.Analyzers.CodeFixes.dll" />
+    <Analyzer Include="..\..\packages\StyleCop.Analyzers.1.0.0\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

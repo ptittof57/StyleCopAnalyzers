@@ -1,5 +1,9 @@
-﻿namespace StyleCop.Analyzers.DocumentationRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.DocumentationRules
 {
+    using System;
     using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.Linq;
@@ -25,7 +29,7 @@
     /// element's type parameters.</para>
     /// </remarks>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class SA1620GenericTypeParameterDocumentationMustMatchTypeParameters : DiagnosticAnalyzer
+    internal class SA1620GenericTypeParameterDocumentationMustMatchTypeParameters : DiagnosticAnalyzer
     {
         /// <summary>
         /// The ID for diagnostics produced by the
@@ -33,7 +37,7 @@
         /// </summary>
         public const string DiagnosticId = "SA1620";
         private const string Title = "Generic type parameter documentation must match type parameters";
-        private const string Description = "The &lt;typeparam&gt; tags within the Xml header documentation for a generic C# element do not match the generic type parameters on the element.";
+        private const string Description = "The <typeparam> tags within the Xml header documentation for a generic C# element do not match the generic type parameters on the element.";
         private const string HelpLink = "https://github.com/DotNetAnalyzers/StyleCopAnalyzers/blob/master/documentation/SA1620.md";
 
         private const string MissingTypeParamForDocumentationMessageFormat = "The type parameter '{0}' does not exist.";
@@ -45,27 +49,22 @@
         private static readonly DiagnosticDescriptor OrderDescriptor =
                    new DiagnosticDescriptor(DiagnosticId, Title, TypeParamWrongOrderMessageFormat, AnalyzerCategory.DocumentationRules, DiagnosticSeverity.Warning, AnalyzerConstants.EnabledByDefault, Description, HelpLink);
 
-        private static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsValue =
-            ImmutableArray.Create(MissingTypeParameterDescriptor);
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
+        private static readonly Action<SyntaxNodeAnalysisContext> DocumentationTriviaAction = HandleDocumentationTrivia;
 
         /// <inheritdoc/>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        {
-            get
-            {
-                return SupportedDiagnosticsValue;
-            }
-        }
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
+            ImmutableArray.Create(MissingTypeParameterDescriptor);
 
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterCompilationStartAction(HandleCompilationStart);
+            context.RegisterCompilationStartAction(CompilationStartAction);
         }
 
         private static void HandleCompilationStart(CompilationStartAnalysisContext context)
         {
-            context.RegisterSyntaxNodeActionHonorExclusions(HandleDocumentationTrivia, SyntaxKind.SingleLineDocumentationCommentTrivia);
+            context.RegisterSyntaxNodeActionHonorExclusions(DocumentationTriviaAction, SyntaxKind.SingleLineDocumentationCommentTrivia);
         }
 
         private static void HandleDocumentationTrivia(SyntaxNodeAnalysisContext context)
@@ -114,8 +113,12 @@
             }
             else if (parentTypeParameters.Length <= index || parentTypeParameters[index] != nameAttribute.Identifier.Identifier.ValueText)
             {
-                context.ReportDiagnostic(Diagnostic.Create(OrderDescriptor, nameAttribute?.Identifier?.GetLocation() ?? alternativeDiagnosticLocation,
-                    nameAttribute.Identifier.Identifier.ValueText, parentTypeParameters.IndexOf(nameAttribute.Identifier.Identifier.ValueText) + 1));
+                context.ReportDiagnostic(
+                    Diagnostic.Create(
+                        OrderDescriptor,
+                        nameAttribute?.Identifier?.GetLocation() ?? alternativeDiagnosticLocation,
+                        nameAttribute.Identifier.Identifier.ValueText,
+                        parentTypeParameters.IndexOf(nameAttribute.Identifier.Identifier.ValueText) + 1));
             }
         }
 

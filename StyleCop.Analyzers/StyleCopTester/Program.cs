@@ -1,4 +1,7 @@
-﻿namespace StyleCopTester
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCopTester
 {
     using System;
     using System.Collections.Concurrent;
@@ -7,6 +10,7 @@
     using System.Diagnostics;
     using System.Linq;
     using System.Reflection;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Windows.Threading;
@@ -15,6 +19,10 @@
     using Microsoft.CodeAnalysis.CodeFixes;
     using Microsoft.CodeAnalysis.Diagnostics;
     using Microsoft.CodeAnalysis.MSBuild;
+    using Microsoft.CodeAnalysis.Text;
+    using StyleCop.Analyzers.Helpers;
+    using File = System.IO.File;
+    using Path = System.IO.Path;
 
     /// <summary>
     /// StyleCopTester is a tool that will analyze a solution, find diagnostics in it and will print out the number of
@@ -33,6 +41,11 @@
                     cts.Cancel();
                 };
 
+            // Since Console apps do not have a SyncronizationContext, we're leveraging the built-in support
+            // in WPF to pump the messages via the Dispatcher.
+            // See the following for additional details:
+            //   http://blogs.msdn.com/b/pfxteam/archive/2012/01/21/10259307.aspx
+            //   https://github.com/DotNetAnalyzers/StyleCopAnalyzers/pull/1362
             SynchronizationContext previousContext = SynchronizationContext.Current;
             try
             {
@@ -61,6 +74,16 @@
             }
             else
             {
+                bool applyChanges = args.Contains("/apply");
+                if (applyChanges)
+                {
+                    if (!args.Contains("/fixall"))
+                    {
+                        Console.Error.WriteLine("Error: /apply can only be used with /fixall");
+                        return;
+                    }
+                }
+
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 var analyzers = GetAllAnalyzers();
 
@@ -74,11 +97,11 @@
 
                 MSBuildWorkspace workspace = MSBuildWorkspace.Create();
                 string solutionPath = args.SingleOrDefault(i => !i.StartsWith("/", StringComparison.Ordinal));
-                Solution solution = workspace.OpenSolutionAsync(solutionPath, cancellationToken).Result;
+                Solution solution = await workspace.OpenSolutionAsync(solutionPath, cancellationToken).ConfigureAwait(false);
 
                 Console.WriteLine($"Loaded solution in {stopwatch.ElapsedMilliseconds}ms");
 
-                if (!args.Contains("/nostats"))
+                if (args.Contains("/stats"))
                 {
                     List<Project> csharpProjects = solution.Projects.Where(i => i.Language == LanguageNames.CSharp).ToList();
 
@@ -94,7 +117,9 @@
 
                 stopwatch.Restart();
 
-                var diagnostics = await GetAnalyzerDiagnosticsAsync(solution, solutionPath, analyzers, cancellationToken).ConfigureAwait(true);
+                bool force = args.Contains("/force");
+
+                var diagnostics = await GetAnalyzerDiagnosticsAsync(solution, solutionPath, analyzers, force, cancellationToken).ConfigureAwait(true);
                 var allDiagnostics = diagnostics.SelectMany(i => i.Value).ToImmutableArray();
 
                 Console.WriteLine($"Found {allDiagnostics.Length} diagnostics in {stopwatch.ElapsedMilliseconds}ms");
@@ -113,6 +138,13 @@
                     }
                 }
 
+                string logArgument = args.FirstOrDefault(x => x.StartsWith("/log:"));
+                if (logArgument != null)
+                {
+                    string fileName = logArgument.Substring(logArgument.IndexOf(':') + 1);
+                    WriteDiagnosticResults(diagnostics.SelectMany(i => i.Value.Select(j => Tuple.Create(i.Key, j))).ToImmutableArray(), fileName);
+                }
+
                 if (args.Contains("/codefixes"))
                 {
                     await TestCodeFixesAsync(stopwatch, solution, allDiagnostics, cancellationToken).ConfigureAwait(true);
@@ -120,12 +152,44 @@
 
                 if (args.Contains("/fixall"))
                 {
-                    await TestFixAllAsync(stopwatch, solution, diagnostics, cancellationToken).ConfigureAwait(true);
+                    await TestFixAllAsync(stopwatch, solution, diagnostics, applyChanges, cancellationToken).ConfigureAwait(true);
                 }
             }
         }
 
-        private static async Task TestFixAllAsync(Stopwatch stopwatch, Solution solution, ImmutableDictionary<ProjectId, ImmutableArray<Diagnostic>> diagnostics, CancellationToken cancellationToken)
+        private static void WriteDiagnosticResults(ImmutableArray<Tuple<ProjectId, Diagnostic>> diagnostics, string fileName)
+        {
+            var orderedDiagnostics =
+                diagnostics
+                .OrderBy(i => i.Item2.Id)
+                .ThenBy(i => i.Item2.Location.SourceTree?.FilePath, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(i => i.Item2.Location.SourceSpan.Start)
+                .ThenBy(i => i.Item2.Location.SourceSpan.End);
+
+            var uniqueLines = new HashSet<string>();
+            StringBuilder completeOutput = new StringBuilder();
+            StringBuilder uniqueOutput = new StringBuilder();
+            foreach (var diagnostic in orderedDiagnostics)
+            {
+                string message = diagnostic.Item2.ToString();
+                string uniqueMessage = $"{diagnostic.Item1}: {diagnostic.Item2}";
+                completeOutput.AppendLine(message);
+                if (uniqueLines.Add(uniqueMessage))
+                {
+                    uniqueOutput.AppendLine(message);
+                }
+            }
+
+            string directoryName = Path.GetDirectoryName(fileName);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+            string extension = Path.GetExtension(fileName);
+            string uniqueFileName = Path.Combine(directoryName, $"{fileNameWithoutExtension}-Unique{extension}");
+
+            File.WriteAllText(fileName, completeOutput.ToString(), Encoding.UTF8);
+            File.WriteAllText(uniqueFileName, uniqueOutput.ToString(), Encoding.UTF8);
+        }
+
+        private static async Task TestFixAllAsync(Stopwatch stopwatch, Solution solution, ImmutableDictionary<ProjectId, ImmutableArray<Diagnostic>> diagnostics, bool applyChanges, CancellationToken cancellationToken)
         {
             Console.WriteLine("Calculating fixes");
 
@@ -139,6 +203,11 @@
             }
 
             Console.WriteLine($"Found {equivalenceGroups.Count} equivalence groups.");
+            if (applyChanges && equivalenceGroups.Count > 1)
+            {
+                Console.Error.WriteLine("/apply can only be used with a single equivalence group.");
+                return;
+            }
 
             Console.WriteLine("Calculating changes");
 
@@ -147,14 +216,31 @@
                 try
                 {
                     stopwatch.Restart();
-                    Console.WriteLine($"Calculating fix for {fix.CodeFixEquivalenceKey}.");
-                    await fix.GetOperationsAsync(cancellationToken).ConfigureAwait(true);
-                    WriteLine($"Calculating changes completed in {stopwatch.ElapsedMilliseconds}ms", ConsoleColor.Yellow);
+                    Console.WriteLine($"Calculating fix for {fix.CodeFixEquivalenceKey} using {fix.FixAllProvider} for {fix.NumberOfDiagnostics} instances.");
+                    var operations = await fix.GetOperationsAsync(cancellationToken).ConfigureAwait(true);
+                    if (applyChanges)
+                    {
+                        var applyOperations = operations.OfType<ApplyChangesOperation>().ToList();
+                        if (applyOperations.Count > 1)
+                        {
+                            Console.Error.WriteLine("/apply can only apply a single code action operation.");
+                        }
+                        else if (applyOperations.Count == 0)
+                        {
+                            Console.WriteLine("No changes were found to apply.");
+                        }
+                        else
+                        {
+                            applyOperations[0].Apply(solution.Workspace, cancellationToken);
+                        }
+                    }
+
+                    WriteLine($"Calculating changes completed in {stopwatch.ElapsedMilliseconds}ms. This is {fix.NumberOfDiagnostics / stopwatch.Elapsed.TotalSeconds:0.000} instances/second.", ConsoleColor.Yellow);
                 }
                 catch (Exception ex)
                 {
                     // Report thrown exceptions
-                    WriteLine($"The fix '{fix.CodeFixEquivalenceKey}' threw an exception:", ConsoleColor.Yellow);
+                    WriteLine($"The fix '{fix.CodeFixEquivalenceKey}' threw an exception after {stopwatch.ElapsedMilliseconds}ms:", ConsoleColor.Yellow);
                     WriteLine(ex.ToString(), ConsoleColor.Yellow);
                 }
             }
@@ -283,7 +369,7 @@
 
             var diagnosticAnalyzerType = typeof(DiagnosticAnalyzer);
 
-            List<DiagnosticAnalyzer> analyzers = new List<DiagnosticAnalyzer>();
+            var analyzers = ImmutableArray.CreateBuilder<DiagnosticAnalyzer>();
 
             foreach (var type in assembly.GetTypes())
             {
@@ -293,12 +379,12 @@
                 }
             }
 
-            return analyzers.ToImmutableArray();
+            return analyzers.ToImmutable();
         }
 
         private static ImmutableDictionary<string, ImmutableList<CodeFixProvider>> GetAllCodeFixers()
         {
-            Assembly assembly = typeof(StyleCop.Analyzers.NoCodeFixAttribute).Assembly;
+            Assembly assembly = typeof(StyleCop.Analyzers.SpacingRules.SA1027CodeFixProvider).Assembly;
 
             var codeFixProviderType = typeof(CodeFixProvider);
 
@@ -337,7 +423,7 @@
             return fixAllProviders.ToImmutableDictionary();
         }
 
-        private static async Task<ImmutableDictionary<ProjectId, ImmutableArray<Diagnostic>>> GetAnalyzerDiagnosticsAsync(Solution solution, string solutionPath, ImmutableArray<DiagnosticAnalyzer> analyzers, CancellationToken cancellationToken)
+        private static async Task<ImmutableDictionary<ProjectId, ImmutableArray<Diagnostic>>> GetAnalyzerDiagnosticsAsync(Solution solution, string solutionPath, ImmutableArray<DiagnosticAnalyzer> analyzers, bool force, CancellationToken cancellationToken)
         {
             List<KeyValuePair<ProjectId, Task<ImmutableArray<Diagnostic>>>> projectDiagnosticTasks = new List<KeyValuePair<ProjectId, Task<ImmutableArray<Diagnostic>>>>();
 
@@ -349,7 +435,7 @@
                     continue;
                 }
 
-                projectDiagnosticTasks.Add(new KeyValuePair<ProjectId, Task<ImmutableArray<Diagnostic>>>(project.Id, GetProjectAnalyzerDiagnosticsAsync(analyzers, project, cancellationToken)));
+                projectDiagnosticTasks.Add(new KeyValuePair<ProjectId, Task<ImmutableArray<Diagnostic>>>(project.Id, GetProjectAnalyzerDiagnosticsAsync(analyzers, project, force, cancellationToken)));
             }
 
             ImmutableDictionary<ProjectId, ImmutableArray<Diagnostic>>.Builder projectDiagnosticBuilder = ImmutableDictionary.CreateBuilder<ProjectId, ImmutableArray<Diagnostic>>();
@@ -366,17 +452,38 @@
         /// </summary>
         /// <param name="analyzers">The list of analyzers that should be used</param>
         /// <param name="project">The project that should be analyzed</param>
+        /// <param name="force"><see langword="true"/> to force the analyzers to be enabled; otherwise,
+        /// <see langword="false"/> to use the behavior configured for the specified <paramref name="project"/>.</param>
         /// <param name="cancellationToken">The cancellation token that the task will observe.</param>
         /// <returns>A list of diagnostics inside the project</returns>
-        private static async Task<ImmutableArray<Diagnostic>> GetProjectAnalyzerDiagnosticsAsync(ImmutableArray<DiagnosticAnalyzer> analyzers, Project project, CancellationToken cancellationToken)
+        private static async Task<ImmutableArray<Diagnostic>> GetProjectAnalyzerDiagnosticsAsync(ImmutableArray<DiagnosticAnalyzer> analyzers, Project project, bool force, CancellationToken cancellationToken)
         {
-            Compilation compilation = await project.GetCompilationAsync(cancellationToken).ConfigureAwait(false);
+            var supportedDiagnosticsSpecificOptions = new Dictionary<string, ReportDiagnostic>();
+            if (force)
+            {
+                foreach (var analyzer in analyzers)
+                {
+                    foreach (var diagnostic in analyzer.SupportedDiagnostics)
+                    {
+                        // make sure the analyzers we are testing are enabled
+                        supportedDiagnosticsSpecificOptions[diagnostic.Id] = ReportDiagnostic.Default;
+                    }
+                }
+            }
+
+            // Report exceptions during the analysis process as errors
+            supportedDiagnosticsSpecificOptions.Add("AD0001", ReportDiagnostic.Error);
+
+            // update the project compilation options
+            var modifiedSpecificDiagnosticOptions = supportedDiagnosticsSpecificOptions.ToImmutableDictionary().SetItems(project.CompilationOptions.SpecificDiagnosticOptions);
+            var modifiedCompilationOptions = project.CompilationOptions.WithSpecificDiagnosticOptions(modifiedSpecificDiagnosticOptions);
+            var processedProject = project.WithCompilationOptions(modifiedCompilationOptions);
+
+            Compilation compilation = await processedProject.GetCompilationAsync(cancellationToken).ConfigureAwait(false);
             CompilationWithAnalyzers compilationWithAnalyzers = compilation.WithAnalyzers(analyzers, cancellationToken: cancellationToken);
 
-            var allDiagnostics = await compilationWithAnalyzers.GetAllDiagnosticsAsync().ConfigureAwait(false);
-
-            // We want analyzer diagnostics and analyzer exceptions
-            return allDiagnostics.RemoveRange(compilation.GetDiagnostics());
+            var diagnostics = await FixAllContextHelper.GetAllDiagnosticsAsync(compilation, compilationWithAnalyzers, analyzers, project.Documents, true, cancellationToken).ConfigureAwait(false);
+            return diagnostics;
         }
 
         private static void PrintHelp()
@@ -384,10 +491,12 @@
             Console.WriteLine("Usage: StyleCopTester [options] <Solution>");
             Console.WriteLine("Options:");
             Console.WriteLine("/all       Run all StyleCopAnalyzers analyzers, including ones that are disabled by default");
-            Console.WriteLine("/nostats   Disable the display of statistics");
+            Console.WriteLine("/stats     Display statistics of the solution");
             Console.WriteLine("/codefixes Test single code fixes");
             Console.WriteLine("/fixall    Test fix all providers");
             Console.WriteLine("/id:<id>   Enable analyzer with diagnostic ID < id > (when this is specified, only this analyzer is enabled)");
+            Console.WriteLine("/apply     Write code fix changes back to disk");
+            Console.WriteLine("/force     Force an analyzer to be enabled, regardless of the configured rule set(s) for the solution");
         }
     }
 }

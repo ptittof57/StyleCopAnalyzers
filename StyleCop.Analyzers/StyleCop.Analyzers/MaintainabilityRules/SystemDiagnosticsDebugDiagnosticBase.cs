@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.MaintainabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.MaintainabilityRules
 {
     using System.Diagnostics;
     using Microsoft.CodeAnalysis;
@@ -9,7 +12,7 @@
     /// A base class for <see cref="System.Diagnostics.Debug"/> diagnostics.
     /// It is used to share code in diagnostics <see cref="SA1405DebugAssertMustProvideMessageText"/> and <see cref="SA1406DebugFailMustProvideMessageText"/>
     /// </summary>
-    public abstract class SystemDiagnosticsDebugDiagnosticBase : DiagnosticAnalyzer
+    internal abstract class SystemDiagnosticsDebugDiagnosticBase : DiagnosticAnalyzer
     {
         /// <summary>
         /// Analyzes a <see cref="InvocationExpressionSyntax"/> node to add a diagnostic to static method calls in <see cref="System.Diagnostics.Debug"/>.

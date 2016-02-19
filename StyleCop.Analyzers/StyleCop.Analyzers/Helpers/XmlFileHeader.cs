@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Helpers
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Helpers
 {
     using System;
     using System.Linq;
@@ -64,7 +67,7 @@
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the file header is missing.
+        /// Gets a value indicating whether the file header is missing.
         /// </summary>
         /// <value>
         /// True if the file header is missing.
@@ -72,7 +75,7 @@
         internal bool IsMissing { get; private set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the file header contains a properly formatted XML structure.
+        /// Gets a value indicating whether the file header contains a properly formatted XML structure.
         /// </summary>
         /// <value>
         /// True if the file header is not properly formatted XML.

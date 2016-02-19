@@ -1,8 +1,12 @@
-﻿namespace StyleCop.Analyzers.Test.SpacingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.SpacingRules
 {
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CodeFixes;
     using Microsoft.CodeAnalysis.Diagnostics;
     using StyleCop.Analyzers.SpacingRules;
@@ -31,6 +35,8 @@ public class TestClass<T> where T : IEnumerable<object>
     public void TestMethod<TModel>() {
         var x = typeof(Action<,,>);
         TestMethod<TModel>();
+        TestMethod<TModel
+            >();
     }
 }
 ";
@@ -362,6 +368,34 @@ public class TestClass
             await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }
 
+        [Fact]
+        public async Task TestMissingTokenAsync()
+        {
+            string testCode = @"
+using System;
+class ClassName
+{
+    void Method()
+    {
+        Type x = typeof(Action<int);
+    }
+}
+";
+
+            DiagnosticResult[] expected =
+            {
+                new DiagnosticResult
+                {
+                    Id = "CS1003",
+                    Severity = DiagnosticSeverity.Error,
+                    Message = "Syntax error, '>' expected",
+                    Locations = new[] { new DiagnosticResultLocation("Test0.cs", 7, 35) }
+                }
+            };
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, expected, CancellationToken.None).ConfigureAwait(false);
+        }
+
         /// <inheritdoc/>
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()
         {
@@ -371,7 +405,7 @@ public class TestClass
         /// <inheritdoc/>
         protected override CodeFixProvider GetCSharpCodeFixProvider()
         {
-            return new OpenCloseSpacingCodeFixProvider();
+            return new TokenSpacingCodeFixProvider();
         }
     }
 }

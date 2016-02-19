@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.DocumentationRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.DocumentationRules
 {
     using System;
     using Helpers;
@@ -10,7 +13,7 @@
     /// <summary>
     /// A base class for diagnostics <see cref="SA1642ConstructorSummaryDocumentationMustBeginWithStandardText"/> and <see cref="SA1643DestructorSummaryDocumentationMustBeginWithStandardText"/> to share common code.
     /// </summary>
-    public abstract class StandardTextDiagnosticBase : DiagnosticAnalyzer
+    internal abstract class StandardTextDiagnosticBase : DiagnosticAnalyzer
     {
         /// <summary>
         /// Describes the result of matching a summary element to a specific desired wording.
@@ -27,6 +30,11 @@
             /// No complete or partial match was found.
             /// </summary>
             None,
+
+            /// <summary>
+            /// A standard text was found but the see element was incorrect.
+            /// </summary>
+            InvalidSeeTag,
 
             /// <summary>
             /// A match to the expected text was found.
@@ -72,11 +80,22 @@
 
                 if (firstTextPartSyntax != null && classReferencePart != null && secondTextParSyntaxt != null)
                 {
-                    if (TextPartsMatch(firstTextPart, secondTextPart, firstTextPartSyntax, secondTextParSyntaxt)
-                        && SeeTagIsCorrect(context, classReferencePart, declarationSyntax))
+                    if (TextPartsMatch(firstTextPart, secondTextPart, firstTextPartSyntax, secondTextParSyntaxt))
                     {
-                        // We found a correct standard text
-                        return MatchResult.FoundMatch;
+                        if (SeeTagIsCorrect(context, classReferencePart, declarationSyntax))
+                        {
+                            // We found a correct standard text
+                            return MatchResult.FoundMatch;
+                        }
+                        else
+                        {
+                            if (diagnosticDescriptor != null)
+                            {
+                                context.ReportDiagnostic(Diagnostic.Create(diagnosticDescriptor, classReferencePart.GetLocation()));
+                            }
+
+                            return MatchResult.None;
+                        }
                     }
                 }
             }

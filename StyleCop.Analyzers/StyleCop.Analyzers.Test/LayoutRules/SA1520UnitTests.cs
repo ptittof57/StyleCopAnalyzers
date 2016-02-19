@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.LayoutRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.LayoutRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -12,12 +15,12 @@
     public class SA1520UnitTests : CodeFixVerifier
     {
         /// <summary>
-        /// Verifies that an if / else statement followed by a single-line statement without curly braces will not
-        /// produce a warning.
+        /// Verifies that an if / else statement followed by a single-line statement without braces will not produce a
+        /// warning.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
-        public async Task TestSingleLineIfElseStatementWithoutCurlyBracketsAsync()
+        public async Task TestSingleLineIfElseStatementWithoutBracesAsync()
         {
             var testCode = @"using System.Diagnostics;
 public class Foo
@@ -35,12 +38,12 @@ public class Foo
         }
 
         /// <summary>
-        /// Verifies that an if / else statement followed by a multi-line statement without curly braces will not
-        /// produce a warning.
+        /// Verifies that an if / else statement followed by a multi-line statement without braces will not produce a
+        /// warning.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
-        public async Task TestMultiLineIfElseStatementWithoutCurlyBracketsAsync()
+        public async Task TestMultiLineIfElseStatementWithoutBracesAsync()
         {
             var testCode = @"using System.Diagnostics;
 public class Foo
@@ -60,11 +63,11 @@ public class Foo
         }
 
         /// <summary>
-        /// Verifies that an if statement followed by a block with curly braces will produce no diagnostics results.
+        /// Verifies that an if statement followed by a block with braces will produce no diagnostics results.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
-        public async Task TestIfElseStatementWithCurlyBracketsAsync()
+        public async Task TestIfElseStatementWithBracesAsync()
         {
             var testCode = @"using System.Diagnostics;
 public class Foo
@@ -86,12 +89,12 @@ public class Foo
         }
 
         /// <summary>
-        /// Verifies that an if statement followed by a else if, followed by an else statement, all blocks with curly
-        /// braces will produce no diagnostics results.
+        /// Verifies that an if statement followed by a else if, followed by an else statement, all blocks with braces
+        /// will produce no diagnostics results.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
-        public async Task TestIfElseIfElseStatementWithCurlyBracketsAsync()
+        public async Task TestIfElseIfElseStatementWithBracesAsync()
         {
             var testCode = @"using System.Diagnostics;
 public class Foo
@@ -117,12 +120,12 @@ public class Foo
         }
 
         /// <summary>
-        /// Verifies that nested if statements followed by a single-line statement without curly braces will produce
+        /// Verifies that nested if statements followed by a single-line statement without braces will produce
         /// no diagnostics.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
-        public async Task TestMultipleSingleLineIfStatementsWithoutCurlyBracketsAsync()
+        public async Task TestMultipleSingleLineIfStatementsWithoutBracesAsync()
         {
             var testCode = @"using System.Diagnostics;
 public class Foo
@@ -137,12 +140,12 @@ public class Foo
         }
 
         /// <summary>
-        /// Verifies that nested if statements followed by a multi-line statement without curly braces will not produce
+        /// Verifies that nested if statements followed by a multi-line statement without braces will not produce
         /// warnings.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
-        public async Task TestMultipleMultiLineIfStatementsWithoutCurlyBracketsAsync()
+        public async Task TestMultipleMultiLineIfStatementsWithoutBracesAsync()
         {
             var testCode = @"using System.Diagnostics;
 public class Foo
@@ -386,7 +389,7 @@ public class Foo
         }
 
         /// <summary>
-        /// Verifies that the code fix provider will work properly handle multiple cases of missing brackets.
+        /// Verifies that the code fix provider will work properly handle multiple cases of missing braces.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
         [Fact]
@@ -465,7 +468,7 @@ public class Foo
 
         protected override IEnumerable<DiagnosticAnalyzer> GetCSharpDiagnosticAnalyzers()
         {
-            yield return new SA1520UseCurlyBracketsConsistently();
+            yield return new SA1520UseBracesConsistently();
         }
 
         protected override CodeFixProvider GetCSharpCodeFixProvider()

@@ -1,5 +1,10 @@
-﻿namespace StyleCop.Analyzers.MaintainabilityRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.MaintainabilityRules
 {
+    using System;
+    using System.Collections.Concurrent;
     using System.Collections.Immutable;
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.Diagnostics;
@@ -17,7 +22,7 @@
     /// </remarks>
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     [NoCodeFix("The \"Encapsulate Field\" fix is provided by Visual Studio.")]
-    public class SA1401FieldsMustBePrivate : DiagnosticAnalyzer
+    internal class SA1401FieldsMustBePrivate : DiagnosticAnalyzer
     {
         /// <summary>
         /// The ID for diagnostics produced by the <see cref="SA1401FieldsMustBePrivate"/> analyzer.
@@ -31,63 +36,79 @@
         private static readonly DiagnosticDescriptor Descriptor =
             new DiagnosticDescriptor(DiagnosticId, Title, MessageFormat, AnalyzerCategory.MaintainabilityRules, DiagnosticSeverity.Warning, AnalyzerConstants.EnabledByDefault, Description, HelpLink);
 
-        private static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsValue =
-            ImmutableArray.Create(Descriptor);
+        private static readonly Action<CompilationStartAnalysisContext> CompilationStartAction = HandleCompilationStart;
 
         /// <inheritdoc/>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
-        {
-            get
-            {
-                return SupportedDiagnosticsValue;
-            }
-        }
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
+            ImmutableArray.Create(Descriptor);
 
         /// <inheritdoc/>
         public override void Initialize(AnalysisContext context)
         {
-            context.RegisterSymbolAction(this.AnalyzeField, SymbolKind.Field);
+            context.RegisterCompilationStartAction(CompilationStartAction);
         }
 
-        private void AnalyzeField(SymbolAnalysisContext symbolAnalysisContext)
+        private static void HandleCompilationStart(CompilationStartAnalysisContext context)
         {
-            var fieldDeclarationSyntax = (IFieldSymbol)symbolAnalysisContext.Symbol;
-            if (!this.IsFieldPrivate(fieldDeclarationSyntax) &&
-                this.IsParentAClass(fieldDeclarationSyntax) &&
-                !fieldDeclarationSyntax.IsConst)
+            Analyzer analyzer = new Analyzer(context.Compilation.GetOrCreateGeneratedDocumentCache());
+            context.RegisterSymbolAction(analyzer.AnalyzeField, SymbolKind.Field);
+        }
+
+        private sealed class Analyzer
+        {
+            private readonly ConcurrentDictionary<SyntaxTree, bool> generatedHeaderCache;
+
+            public Analyzer(ConcurrentDictionary<SyntaxTree, bool> generatedHeaderCache)
             {
-                foreach (var location in symbolAnalysisContext.Symbol.Locations)
+                this.generatedHeaderCache = generatedHeaderCache;
+            }
+
+            public void AnalyzeField(SymbolAnalysisContext symbolAnalysisContext)
+            {
+                var fieldDeclarationSyntax = (IFieldSymbol)symbolAnalysisContext.Symbol;
+                if (!IsFieldPrivate(fieldDeclarationSyntax) &&
+                    !IsStaticReadonly(fieldDeclarationSyntax) &&
+                    IsParentAClass(fieldDeclarationSyntax) &&
+                    !fieldDeclarationSyntax.IsConst)
                 {
-                    if (!location.IsInSource)
+                    foreach (var location in symbolAnalysisContext.Symbol.Locations)
                     {
-                        // assume symbols not defined in a source document are "out of reach"
-                        return;
+                        if (!location.IsInSource)
+                        {
+                            // assume symbols not defined in a source document are "out of reach"
+                            return;
+                        }
+
+                        if (location.SourceTree.IsGeneratedDocument(this.generatedHeaderCache, symbolAnalysisContext.CancellationToken))
+                        {
+                            return;
+                        }
                     }
 
-                    if (location.SourceTree.IsGeneratedDocument(symbolAnalysisContext.Compilation, symbolAnalysisContext.CancellationToken))
-                    {
-                        return;
-                    }
+                    symbolAnalysisContext.ReportDiagnostic(Diagnostic.Create(Descriptor, fieldDeclarationSyntax.Locations[0]));
+                }
+            }
+
+            private static bool IsFieldPrivate(IFieldSymbol fieldDeclarationSyntax)
+            {
+                return fieldDeclarationSyntax.DeclaredAccessibility == Accessibility.Private;
+            }
+
+            private static bool IsStaticReadonly(IFieldSymbol fieldDeclarationSyntax)
+            {
+                return fieldDeclarationSyntax.IsStatic && fieldDeclarationSyntax.IsReadOnly;
+            }
+
+            private static bool IsParentAClass(IFieldSymbol fieldDeclarationSyntax)
+            {
+                if (fieldDeclarationSyntax.ContainingSymbol != null &&
+                    fieldDeclarationSyntax.ContainingSymbol.Kind == SymbolKind.NamedType)
+                {
+                    return ((ITypeSymbol)fieldDeclarationSyntax.ContainingSymbol).TypeKind == TypeKind.Class;
                 }
 
-                symbolAnalysisContext.ReportDiagnostic(Diagnostic.Create(Descriptor, fieldDeclarationSyntax.Locations[0]));
+                return false;
             }
-        }
-
-        private bool IsFieldPrivate(IFieldSymbol fieldDeclarationSyntax)
-        {
-            return fieldDeclarationSyntax.DeclaredAccessibility == Accessibility.Private;
-        }
-
-        private bool IsParentAClass(IFieldSymbol fieldDeclarationSyntax)
-        {
-            if (fieldDeclarationSyntax.ContainingSymbol != null &&
-                fieldDeclarationSyntax.ContainingSymbol.Kind == SymbolKind.NamedType)
-            {
-                return ((ITypeSymbol)fieldDeclarationSyntax.ContainingSymbol).TypeKind == TypeKind.Class;
-            }
-
-            return false;
         }
     }
 }

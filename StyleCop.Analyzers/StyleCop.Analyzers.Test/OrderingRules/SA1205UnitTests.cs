@@ -1,4 +1,7 @@
-﻿namespace StyleCop.Analyzers.Test.OrderingRules
+﻿// Copyright (c) Tunnel Vision Laboratories, LLC. All Rights Reserved.
+// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+
+namespace StyleCop.Analyzers.Test.OrderingRules
 {
     using System.Collections.Generic;
     using System.Threading;
@@ -157,6 +160,42 @@ public partial class Foo
             await this.VerifyCSharpDiagnosticAsync(testCode, this.CSharpDiagnostic().WithLocation(9, 15), CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpDiagnosticAsync(fixedTestCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
             await this.VerifyCSharpFixAsync(testCode, fixedTestCode).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Verifies that all 5 access modifiers are accepted for nested types.
+        /// This is a regression test for issue #2040.
+        /// </summary>
+        /// <param name="accessModifier">The access modifier to use for the nested type.</param>
+        /// <param name="typeKeyword">The type keyword to use.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+        [Theory]
+        [InlineData("public", "class")]
+        [InlineData("protected", "class")]
+        [InlineData("internal", "class")]
+        [InlineData("protected internal", "class")]
+        [InlineData("private", "class")]
+        [InlineData("public", "struct")]
+        [InlineData("protected", "struct")]
+        [InlineData("internal", "struct")]
+        [InlineData("protected internal", "struct")]
+        [InlineData("private", "struct")]
+        public async Task TestNestedTypeAccessModifiersAsync(string accessModifier, string typeKeyword)
+        {
+            var testCode = $@"
+internal static partial class TestPartial
+{{
+    {accessModifier} partial {typeKeyword} PartialInner
+    {{
+        public int Do()
+        {{
+            return 2;
+        }}
+    }}
+}}
+";
+
+            await this.VerifyCSharpDiagnosticAsync(testCode, EmptyDiagnosticResults, CancellationToken.None).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
